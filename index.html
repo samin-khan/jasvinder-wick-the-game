@@ -554,7 +554,7 @@
       <div><strong>Space</strong> Jump / helicopter lift</div>
       <div><strong>V</strong> Brief face camera</div>
       <div id="kControl" class="locked"><strong>K</strong> Pull out the big guns</div>
-      <div><strong>R</strong> Restart / boss rockets</div>
+      <div><strong>R</strong> Boss rockets</div>
       <div><strong>L</strong> Debug aim rays</div>
     </div>
 
@@ -602,7 +602,7 @@
       </div>
       <div id="playAgainPanel" class="panel">
         <h2>Play again?</h2>
-        <button id="playAgainButton" type="button">Restart Game</button>
+        <button id="playAgainButton" type="button">Play Again</button>
       </div>
     </div>
   </div>
@@ -973,39 +973,18 @@
       return texture;
     }
 
-    function makeFaceTexture() {
-      const image = new Image();
-      const canvas = document.createElement("canvas");
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#9b6047";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      image.addEventListener("load", () => {
-        ctx.clearRect(0, 0, 512, 512);
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(256, 252, 178, 218, 0, 0, TAU);
-        ctx.clip();
-        ctx.drawImage(image, 378, 18, 440, 600, 64, 0, 384, 512);
-        const gradient = ctx.createRadialGradient(256, 226, 120, 256, 256, 252);
-        gradient.addColorStop(0, "rgba(255,255,255,0)");
-        gradient.addColorStop(1, "rgba(77,44,31,0.28)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.restore();
+    function makePhotoTexture(src) {
+      const texture = new THREE.TextureLoader().load(src, () => {
         texture.needsUpdate = true;
+      }, undefined, () => {
+        showToast("A character portrait could not load");
       });
-      image.addEventListener("error", () => {
-        showToast("Jasvinder portrait could not load");
-      });
-      image.src = "./assets/images/IMG_1503.jpg";
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       return texture;
     }
 
-    const faceTexture = makeFaceTexture();
+    const faceTexture = makePhotoTexture("./assets/images/IMG_1503.jpg");
     const textureLoader = new THREE.TextureLoader();
     const jasvinderPortrait = "./assets/images/IMG_1503.jpg";
     const viggoPortrait = "./assets/images/viggo_tarasov.webp";
@@ -1494,10 +1473,11 @@
       group.add(head);
 
       const face = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.72, 0.92),
-        new THREE.MeshBasicMaterial({ map: faceTexture, transparent: true })
+        new THREE.PlaneGeometry(0.96, 0.65),
+        new THREE.MeshBasicMaterial({ map: faceTexture, side: THREE.DoubleSide })
       );
-      face.position.set(0, 3.79, -0.397);
+      face.name = "jasvinderPhotoFace";
+      face.position.set(0, 3.78, -0.48);
       face.rotation.y = Math.PI;
       group.add(face);
 
@@ -1506,11 +1486,6 @@
       hair.scale.set(0.95, 0.42, 0.86);
       hair.castShadow = true;
       group.add(hair);
-
-      const beard = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.052, 8, 30, Math.PI * 1.25), materials.beard);
-      beard.position.set(0, 3.63, -0.32);
-      beard.rotation.set(0.1, 0, Math.PI * 0.88);
-      group.add(beard);
 
       for (const side of [-1, 1]) {
         const ear = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), materials.skin);
@@ -2061,18 +2036,7 @@
 
     function updateBoss(dt) {
       if (!game.bossActive || !viggoHelicopter) return;
-      const orbit = performance.now() * 0.0007;
-      const center = player.position.clone().add(new THREE.Vector3(0, 10, -18));
-      viggoHelicopter.visible = true;
-      viggoHelicopter.position.set(
-        center.x + Math.cos(orbit) * 34,
-        14 + Math.sin(orbit * 1.6) * 5,
-        center.z + Math.sin(orbit) * 30
-      );
-      viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
-      const rotor = viggoHelicopter.getObjectByName("mainRotor");
-      if (rotor) rotor.rotation.y += dt * 34;
-      updateViggoFaceBillboard();
+      moveViggoBossHelicopter(dt);
 
       game.bossFireTimer -= dt;
       if (game.bossFireTimer <= 0) {
@@ -2083,6 +2047,42 @@
         game.bossFireTimer = 1.15 + Math.random() * 0.8;
       }
       game.rocketCooldown = Math.max(0, game.rocketCooldown - dt);
+    }
+
+    function moveViggoBossHelicopter(dt) {
+      if (!viggoHelicopter) return;
+      const orbit = performance.now() * 0.0007;
+      const center = player.position.clone().add(new THREE.Vector3(0, 10, -18));
+      viggoHelicopter.visible = true;
+      viggoHelicopter.position.set(
+        center.x + Math.cos(orbit) * 34,
+        14 + Math.sin(orbit * 1.6) * 5,
+        center.z + Math.sin(orbit) * 30
+      );
+      viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
+      spinViggoRotor(dt, 34);
+      updateViggoFaceBillboard();
+    }
+
+    function moveViggoCruiseHelicopter(dt) {
+      if (!viggoHelicopter || game.finalFlight || game.over || game.bossActive || !viggoHelicopter.visible) return;
+      const orbit = performance.now() * 0.00045;
+      const center = game.started && game.level > 0
+        ? player.position.clone().add(new THREE.Vector3(0, 0, -36))
+        : new THREE.Vector3(0, 0, -38);
+      viggoHelicopter.position.set(
+        center.x + Math.cos(orbit) * 34,
+        10.5 + Math.sin(orbit * 1.7) * 2.8,
+        center.z + Math.sin(orbit) * 24
+      );
+      viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
+      spinViggoRotor(dt, 30);
+      updateViggoFaceBillboard();
+    }
+
+    function spinViggoRotor(dt, speed) {
+      const rotor = viggoHelicopter?.getObjectByName("mainRotor");
+      if (rotor) rotor.rotation.y += dt * speed;
     }
 
     function updateViggoFaceBillboard() {
@@ -2450,7 +2450,7 @@
       if (player.health <= 0) {
         game.over = true;
         document.exitPointerLock?.();
-        showToast("Jasvinder is down. Press R to restart.");
+        showToast("Jasvinder is down.");
       }
     }
 
@@ -2621,16 +2621,11 @@
     function updateStory(dt) {
       if (game.started && game.level === 0 && game.introTimer > 0) {
         game.introTimer -= dt;
-        if (viggoHelicopter) {
-          viggoHelicopter.visible = true;
-          const orbit = performance.now() * 0.00045;
-          viggoHelicopter.position.set(Math.cos(orbit) * 28, 9.5 + Math.sin(orbit * 1.7) * 2, -38 + Math.sin(orbit) * 20);
-          viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
-          const rotor = viggoHelicopter.getObjectByName("mainRotor");
-          if (rotor) rotor.rotation.y += dt * 30;
-        }
+        if (viggoHelicopter) viggoHelicopter.visible = true;
         if (game.introTimer <= 0) startLevel1();
       }
+      if (game.bossActive && game.paused) moveViggoBossHelicopter(dt);
+      else moveViggoCruiseHelicopter(dt);
       const night = clamp(game.timeOfDay, 0, 1);
       if (moon) moon.visible = night > 0.25;
       if (stars) stars.visible = night > 0.2;
@@ -2864,8 +2859,12 @@
       }
       keys.add(event.code);
       if (event.code === "KeyK") activateSpecial();
-      if (event.code === "KeyR" && game.bossActive) shootRocket();
-      else if (event.code === "KeyR") restart();
+      if (event.code === "KeyR") {
+        if (game.bossActive && !game.paused && game.level === 3 && game.vehicleMode === "helicopter" && !game.over) shootRocket();
+        else showToast("Rockets unlock during Viggo's helicopter fight");
+        event.preventDefault();
+        return;
+      }
       if (event.code === "KeyV") {
         game.frontCamera = true;
         game.frontCameraTimer = 2.4;
