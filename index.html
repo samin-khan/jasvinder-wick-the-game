@@ -1,0 +1,2905 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jasvinder Wick</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0a0b0d;
+      color: #f6f1e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      background: #111;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      color: #fbf7ef;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+    }
+
+    #topbar {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: grid;
+      grid-template-columns: minmax(180px, 320px) 1fr minmax(180px, 320px);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(10, 12, 15, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      padding: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+    }
+
+    #title {
+      font-size: clamp(20px, 3vw, 32px);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1;
+      text-align: center;
+      align-self: start;
+      color: #fff3d2;
+    }
+
+    #subtitle {
+      display: block;
+      margin-top: 7px;
+      font-size: 12px;
+      font-weight: 650;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .meter {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .fill {
+      width: 100%;
+      height: 100%;
+      transform-origin: left center;
+      transform: scaleX(1);
+      background: linear-gradient(90deg, #e94f37, #f7c948);
+    }
+
+    #specialFill {
+      background: linear-gradient(90deg, #24d6c8, #fff173, #ff4c78);
+    }
+
+    .statline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 7px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    #rightStats {
+      justify-self: end;
+      min-width: 232px;
+    }
+
+    #controls {
+      position: absolute;
+      top: 136px;
+      right: 18px;
+      width: min(320px, calc(100vw - 36px));
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    #controls strong {
+      color: #fff3d2;
+      display: inline-block;
+      min-width: 54px;
+      margin-right: 6px;
+      text-align: right;
+    }
+
+    #controls div {
+      white-space: nowrap;
+    }
+
+    #controls .locked {
+      color: rgba(255, 255, 255, 0.34);
+    }
+
+    #dialogue {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 12px;
+      width: min(780px, calc(100vw - 36px));
+      min-height: 92px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+
+    #exposition {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: min(760px, calc(100vw - 36px));
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+
+    #exposition.visible {
+      opacity: 1;
+    }
+
+    #expositionMode {
+      margin-bottom: 10px;
+      color: #fff1c0;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    #expositionText {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: clamp(22px, 3.2vw, 42px);
+      font-weight: 850;
+      line-height: 1.16;
+    }
+
+    #dialogue.visible {
+      opacity: 1;
+    }
+
+    #speakerIcon {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border: 2px solid rgba(255, 241, 192, 0.78);
+      border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+      background: #111;
+    }
+
+    #dialogueMode {
+      display: inline-block;
+      margin-bottom: 5px;
+      padding: 2px 7px;
+      border: 1px solid rgba(255, 241, 192, 0.42);
+      border-radius: 999px;
+      color: rgba(255, 241, 192, 0.9);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    #dialogueName {
+      margin-bottom: 4px;
+      color: #fff1c0;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    #dialogueText {
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 16px;
+      line-height: 1.42;
+    }
+
+    #centerPrompt {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      width: min(580px, calc(100vw - 32px));
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    #centerPrompt h1 {
+      margin: 0 0 10px;
+      font-size: clamp(42px, 9vw, 96px);
+      line-height: 0.86;
+      letter-spacing: 0;
+      color: #fff1c0;
+    }
+
+    #centerPrompt p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    #crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+      opacity: 0.92;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(255, 245, 218, 0.92);
+      box-shadow: 0 0 10px rgba(255, 218, 122, 0.45);
+    }
+
+    #crosshair::before {
+      left: 11px;
+      top: 2px;
+      width: 2px;
+      height: 20px;
+    }
+
+    #crosshair::after {
+      left: 2px;
+      top: 11px;
+      width: 20px;
+      height: 2px;
+    }
+
+    #toast {
+      position: absolute;
+      left: 50%;
+      top: 64%;
+      min-height: 24px;
+      transform: translateX(-50%);
+      color: #fff3d2;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+
+    #bossHealth {
+      position: absolute;
+      left: 50%;
+      top: 92px;
+      display: none;
+      width: min(520px, calc(100vw - 36px));
+      transform: translateX(-50%);
+    }
+
+    #bossHealth.visible {
+      display: block;
+    }
+
+    #tutorial {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(560px, calc(100vw - 36px));
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      text-align: center;
+      opacity: 0;
+      display: none;
+    }
+
+    #tutorial.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    #tutorialTitle {
+      margin-bottom: 10px;
+      color: #fff1c0;
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    #tutorialText {
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    #tutorialHint {
+      margin-top: 12px;
+      color: #b8f6df;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    #endingOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      overflow: hidden;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 45%, rgba(20, 28, 42, 0.16), rgba(4, 5, 8, 0.62));
+    }
+
+    #endingOverlay.visible {
+      display: block;
+    }
+
+    #confettiLayer {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 900ms ease;
+    }
+
+    #endingOverlay.confetti #confettiLayer {
+      opacity: 1;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -12px;
+      width: 8px;
+      height: 16px;
+      border-radius: 2px;
+      animation: confettiFall var(--fall-duration, 4.8s) linear infinite;
+      animation-delay: var(--fall-delay, 0s);
+      transform: rotate(var(--tilt, 0deg));
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translate3d(0, -10vh, 0) rotate(0deg);
+      }
+
+      100% {
+        transform: translate3d(var(--drift, 0px), 112vh, 0) rotate(720deg);
+      }
+    }
+
+    #creditsPanel {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transition: opacity 900ms ease;
+    }
+
+    #endingOverlay.credits #creditsPanel {
+      opacity: 1;
+    }
+
+    #creditsRoll {
+      position: absolute;
+      top: 100%;
+      width: min(720px, calc(100vw - 36px));
+      text-align: center;
+      animation: creditsRoll 13s linear forwards;
+      animation-play-state: paused;
+    }
+
+    #endingOverlay.credits #creditsRoll {
+      animation-play-state: running;
+    }
+
+    #creditsRoll h2 {
+      margin: 0 0 34px;
+      color: #fff1c0;
+      font-size: clamp(42px, 8vw, 86px);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    #creditsRoll p {
+      margin: 18px 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(20px, 3vw, 34px);
+      font-weight: 850;
+    }
+
+    @keyframes creditsRoll {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(-150vh);
+      }
+    }
+
+    #playAgainPanel {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      display: none;
+      width: min(420px, calc(100vw - 36px));
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    #playAgainPanel.visible {
+      display: block;
+    }
+
+    #playAgainPanel h2 {
+      margin: 0 0 18px;
+      color: #fff1c0;
+      font-size: clamp(34px, 6vw, 58px);
+      line-height: 1;
+    }
+
+    #playAgainButton {
+      border: 1px solid rgba(255, 241, 192, 0.72);
+      border-radius: 8px;
+      padding: 12px 18px;
+      color: #111317;
+      background: #fff1c0;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    }
+
+    body.playing #centerPrompt {
+      display: none;
+    }
+
+    body.special #hud {
+      animation: pulse 280ms linear infinite alternate;
+    }
+
+    @keyframes pulse {
+      from {
+        filter: saturate(1);
+      }
+
+      to {
+        filter: saturate(1.35) brightness(1.12);
+      }
+    }
+
+    @media (max-width: 760px) {
+      #topbar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      #title {
+        text-align: left;
+        order: -1;
+      }
+
+      #rightStats {
+        justify-self: stretch;
+      }
+
+      #controls {
+        top: auto;
+        right: 18px;
+        bottom: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div id="topbar">
+      <div class="panel">
+        <div class="statline"><span>Health</span><span id="healthText">100</span></div>
+        <div class="meter"><div id="healthFill" class="fill"></div></div>
+      </div>
+      <div id="title">
+        Jasvinder Wick
+        <span id="subtitle">Los Angeles contract night</span>
+      </div>
+      <div id="rightStats" class="panel">
+        <div class="statline"><span>K: Pull out the big guns</span><span id="specialText">locked</span></div>
+        <div class="meter"><div id="specialFill" class="fill"></div></div>
+        <div class="statline" style="margin:10px 0 0;"><span>Score</span><span id="scoreText">0</span></div>
+        <div class="statline" style="margin:2px 0 0;"><span>Wave</span><span id="waveText">1</span></div>
+        <div class="statline" style="margin:2px 0 0;"><span>Kills to next level</span><span id="killsText">0 / 8</span></div>
+      </div>
+    </div>
+
+    <div id="crosshair"></div>
+
+    <div id="controls" class="panel">
+      <div><strong>WASD</strong> Move / drive / fly</div>
+      <div><strong>Mouse</strong> Aim / orbit camera</div>
+      <div><strong>Click</strong> Shoot</div>
+      <div><strong>Space</strong> Jump / helicopter lift</div>
+      <div><strong>V</strong> Brief face camera</div>
+      <div id="kControl" class="locked"><strong>K</strong> Pull out the big guns</div>
+      <div><strong>R</strong> Restart / boss rockets</div>
+      <div><strong>L</strong> Debug aim rays</div>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="bossHealth" class="panel">
+      <div class="statline"><span>Viggo's helicopter</span><span id="bossText">100%</span></div>
+      <div class="meter"><div id="bossFill" class="fill"></div></div>
+    </div>
+
+    <div id="exposition" class="panel">
+      <div id="expositionMode">Scene exposition</div>
+      <div id="expositionText">The city took everything. Tonight it answers.</div>
+    </div>
+
+    <div id="tutorial" class="panel">
+      <div id="tutorialTitle">How to shoot</div>
+      <div id="tutorialText">Aim with the mouse. Click to fire. Keep Jasvinder moving while the crosshair settles on the attacker.</div>
+      <div id="tutorialHint">Click to continue</div>
+    </div>
+
+    <div id="dialogue" class="panel">
+      <img id="speakerIcon" src="./assets/images/IMG_1503.jpg" alt="">
+      <div>
+        <div id="dialogueMode">Scene exposition</div>
+        <div id="dialogueName">Scene</div>
+        <div id="dialogueText">The city took everything. Tonight it answers.</div>
+      </div>
+    </div>
+
+    <div id="centerPrompt" class="panel">
+      <h1>Jasvinder Wick</h1>
+      <p>Click to enter the city if your browser asks for a gesture.</p>
+    </div>
+  </div>
+
+  <div id="endingOverlay">
+    <div id="confettiLayer"></div>
+    <div id="creditsPanel">
+      <div id="creditsRoll">
+        <h2>Jasvinder Wick</h2>
+        <p>Jasvinder Wick played by Romee</p>
+        <p>Game Creator: Samin</p>
+        <p>Los Angeles survived the night.</p>
+      </div>
+      <div id="playAgainPanel" class="panel">
+        <h2>Play again?</h2>
+        <button id="playAgainButton" type="button">Restart Game</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="soundtrack" src="./assets/audio/intro-and-loop-john-wick-theme.mp3" loop autoplay preload="auto"></audio>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+    import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+    import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+    import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+    import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+
+    const TAU = Math.PI * 2;
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x89a7ba);
+    scene.fog = new THREE.Fog(0x89a7ba, 55, 180);
+
+    const camera = new THREE.PerspectiveCamera(66, window.innerWidth / window.innerHeight, 0.1, 600);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    document.body.prepend(renderer.domElement);
+
+    const composer = new EffectComposer(renderer);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+    composer.setSize(window.innerWidth, window.innerHeight);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.11, 0.25, 0.9);
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
+
+    const clock = new THREE.Clock();
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2(0, 0);
+    const up = new THREE.Vector3(0, 1, 0);
+    const tempVec = new THREE.Vector3();
+    const tempVec2 = new THREE.Vector3();
+
+    const hud = {
+      healthFill: document.querySelector("#healthFill"),
+      healthText: document.querySelector("#healthText"),
+      specialFill: document.querySelector("#specialFill"),
+      specialText: document.querySelector("#specialText"),
+      scoreText: document.querySelector("#scoreText"),
+      waveText: document.querySelector("#waveText"),
+      killsText: document.querySelector("#killsText"),
+      kControl: document.querySelector("#kControl"),
+      prompt: document.querySelector("#centerPrompt"),
+      toast: document.querySelector("#toast"),
+      tutorial: document.querySelector("#tutorial"),
+      tutorialTitle: document.querySelector("#tutorialTitle"),
+      tutorialText: document.querySelector("#tutorialText"),
+      tutorialHint: document.querySelector("#tutorialHint"),
+      exposition: document.querySelector("#exposition"),
+      expositionText: document.querySelector("#expositionText"),
+      bossHealth: document.querySelector("#bossHealth"),
+      bossFill: document.querySelector("#bossFill"),
+      bossText: document.querySelector("#bossText"),
+      soundtrack: document.querySelector("#soundtrack"),
+      dialogue: document.querySelector("#dialogue"),
+      speakerIcon: document.querySelector("#speakerIcon"),
+      dialogueMode: document.querySelector("#dialogueMode"),
+      dialogueName: document.querySelector("#dialogueName"),
+      dialogueText: document.querySelector("#dialogueText"),
+      endingOverlay: document.querySelector("#endingOverlay"),
+      confettiLayer: document.querySelector("#confettiLayer"),
+      creditsRoll: document.querySelector("#creditsRoll"),
+      playAgainPanel: document.querySelector("#playAgainPanel"),
+      playAgainButton: document.querySelector("#playAgainButton")
+    };
+
+    const keys = new Set();
+    const obstacles = [];
+    const enemies = [];
+    const playerBullets = [];
+    const enemyBullets = [];
+    const rockets = [];
+    const particles = [];
+    const pickups = [];
+    const damageables = [];
+    const storyObjects = [];
+    let redCar = null;
+    let helicopter = null;
+    let viggoHelicopter = null;
+    let viggoBillboard = null;
+    let moon = null;
+    let stars = null;
+
+    const game = {
+      started: false,
+      over: false,
+      score: 0,
+      wave: 1,
+      spawnTimer: 0,
+      nextWaveKills: 8,
+      totalKills: 0,
+      level: 0,
+      levelKills: 0,
+      levelGoal: 8,
+      paused: false,
+      tutorial: null,
+      specialUnlocked: false,
+      specialUsedOnce: false,
+      shootingTutorialShown: false,
+      henchmenStarted: false,
+      bossActive: false,
+      bossHealth: 100,
+      bossFireTimer: 0,
+      rocketCooldown: 0,
+      debugAim: false,
+      debugObjects: [],
+      cameraShake: 0,
+      recoil: 0,
+      forcedShotTarget: null,
+      specialLockTarget: null,
+      specialLockTime: 0,
+      currentTrack: "",
+      vehicleMode: "onFoot",
+      frontCamera: false,
+      frontCameraTimer: 0,
+      storyTimer: 0,
+      introTimer: 0,
+      introActive: true,
+      finalFlight: false,
+      endingStarted: false,
+      endingTimers: [],
+      timeOfDay: 0,
+      toastTimer: 0,
+      specialCharge: 0,
+      specialActive: 0,
+      specialFireTimer: 0
+    };
+
+    const player = {
+      group: new THREE.Group(),
+      body: null,
+      position: new THREE.Vector3(0, 0, 4),
+      velocity: new THREE.Vector3(),
+      yaw: Math.PI,
+      pitch: -0.18,
+      health: 100,
+      grounded: true,
+      shootCooldown: 0,
+      invulnerable: 0,
+      radius: 1.0,
+      walkCycle: 0,
+      bones: {}
+    };
+
+    function makeNoiseTexture(options = {}) {
+      const size = options.size || 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const base = new THREE.Color(options.base || 0x777777);
+      const accent = new THREE.Color(options.accent || 0xaaaaaa);
+      const image = ctx.createImageData(size, size);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4;
+          const grain = Math.random();
+          const streak = Math.sin((x * 0.08 + y * 0.021) + Math.random() * 0.45) * 0.5 + 0.5;
+          const t = clamp(grain * 0.74 + streak * 0.26, 0, 1);
+          image.data[i] = Math.round(lerp(base.r, accent.r, t) * 255);
+          image.data[i + 1] = Math.round(lerp(base.g, accent.g, t) * 255);
+          image.data[i + 2] = Math.round(lerp(base.b, accent.b, t) * 255);
+          image.data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(image, 0, 0);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(options.repeatX || 1, options.repeatY || 1);
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return texture;
+    }
+
+    function makeFabricTexture() {
+      const texture = makeNoiseTexture({ base: 0x050506, accent: 0x222326, repeatX: 5, repeatY: 8, size: 256 });
+      return texture;
+    }
+
+    function makeLeafTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, 512, 128);
+      const grad = ctx.createLinearGradient(0, 0, 512, 0);
+      grad.addColorStop(0, "rgba(24,96,50,0)");
+      grad.addColorStop(0.18, "#1f7b43");
+      grad.addColorStop(0.5, "#38a45f");
+      grad.addColorStop(1, "rgba(34,128,68,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, 64);
+      ctx.quadraticCurveTo(210, 0, 512, 58);
+      ctx.quadraticCurveTo(210, 128, 0, 64);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(225,255,198,.34)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(36, 65);
+      ctx.lineTo(482, 61);
+      ctx.stroke();
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return texture;
+    }
+
+    const asphaltTexture = makeNoiseTexture({ base: 0x151719, accent: 0x3b3f43, repeatX: 18, repeatY: 18, size: 512 });
+    const concreteTexture = makeNoiseTexture({ base: 0x7f7c73, accent: 0xc8c1b1, repeatX: 12, repeatY: 3, size: 256 });
+    const sandTexture = makeNoiseTexture({ base: 0xa88651, accent: 0xe3c98e, repeatX: 9, repeatY: 4, size: 256 });
+    const clothTexture = makeFabricTexture();
+    const skinTexture = makeNoiseTexture({ base: 0x8a523d, accent: 0xd19775, repeatX: 2, repeatY: 2, size: 256 });
+    const leafTexture = makeLeafTexture();
+    const trunkTexture = makeNoiseTexture({ base: 0x563822, accent: 0x9a714d, repeatX: 3, repeatY: 12, size: 256 });
+    const facadeTexture = makeNoiseTexture({ base: 0x2f3a42, accent: 0x66777f, repeatX: 3, repeatY: 12, size: 256 });
+
+    const materials = {
+      asphalt: new THREE.MeshStandardMaterial({ color: 0x1e2023, map: asphaltTexture, bumpMap: asphaltTexture, bumpScale: 0.055, roughness: 0.96, metalness: 0.02 }),
+      lane: new THREE.MeshStandardMaterial({ color: 0xd9bd56, roughness: 0.72, metalness: 0.02 }),
+      sidewalk: new THREE.MeshStandardMaterial({ color: 0xaaa295, map: concreteTexture, bumpMap: concreteTexture, bumpScale: 0.035, roughness: 0.86 }),
+      concrete: new THREE.MeshStandardMaterial({ color: 0xbdb6aa, map: concreteTexture, bumpMap: concreteTexture, bumpScale: 0.028, roughness: 0.88 }),
+      black: new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.48, metalness: 0.18 }),
+      coat: new THREE.MeshStandardMaterial({ color: 0x090909, map: clothTexture, bumpMap: clothTexture, bumpScale: 0.045, roughness: 0.88, metalness: 0.02 }),
+      skin: new THREE.MeshStandardMaterial({ color: 0x9b6047, map: skinTexture, bumpMap: skinTexture, bumpScale: 0.018, roughness: 0.54 }),
+      hair: new THREE.MeshStandardMaterial({ color: 0x151313, roughness: 0.58, metalness: 0.03 }),
+      beard: new THREE.MeshStandardMaterial({ color: 0x232323, roughness: 0.9 }),
+      enemySuit: new THREE.MeshStandardMaterial({ color: 0x16191d, map: clothTexture, bumpMap: clothTexture, bumpScale: 0.035, roughness: 0.79 }),
+      enemyShirt: new THREE.MeshStandardMaterial({ color: 0xb8b9b1, roughness: 0.62 }),
+      enemySkin: new THREE.MeshStandardMaterial({ color: 0xb98b6d, map: skinTexture, bumpMap: skinTexture, bumpScale: 0.014, roughness: 0.58 }),
+      red: new THREE.MeshBasicMaterial({ color: 0xff453a }),
+      muzzle: new THREE.MeshBasicMaterial({ color: 0xfff1a1 }),
+      palm: new THREE.MeshStandardMaterial({ color: 0x3a9b59, map: leafTexture, transparent: true, alphaTest: 0.08, side: THREE.DoubleSide, roughness: 0.76 }),
+      trunk: new THREE.MeshStandardMaterial({ color: 0x755237, map: trunkTexture, bumpMap: trunkTexture, bumpScale: 0.07, roughness: 0.9 }),
+      neonBlue: new THREE.MeshBasicMaterial({ color: 0x58d9ff }),
+      neonPink: new THREE.MeshBasicMaterial({ color: 0xff477e }),
+      glass: new THREE.MeshStandardMaterial({ color: 0x5f8498, roughness: 0.16, metalness: 0.18, transparent: true, opacity: 0.7 }),
+      sand: new THREE.MeshStandardMaterial({ color: 0xd1b073, map: sandTexture, bumpMap: sandTexture, bumpScale: 0.04, roughness: 0.94 })
+    };
+
+    function addLights() {
+      const hemi = new THREE.HemisphereLight(0xfff2dc, 0x24384a, 1.45);
+      scene.add(hemi);
+
+      const sun = new THREE.DirectionalLight(0xffc891, 3.1);
+      sun.position.set(-42, 58, 38);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -110;
+      sun.shadow.camera.right = 110;
+      sun.shadow.camera.top = 110;
+      sun.shadow.camera.bottom = -110;
+      sun.shadow.bias = -0.00018;
+      scene.add(sun);
+
+      const rim = new THREE.DirectionalLight(0x7fcfff, 1.45);
+      rim.position.set(42, 18, -52);
+      scene.add(rim);
+
+      const streetWarm = new THREE.PointLight(0xffb66b, 55, 34, 1.65);
+      streetWarm.position.set(-18, 7, 12);
+      streetWarm.castShadow = true;
+      scene.add(streetWarm);
+
+      const pierGlow = new THREE.PointLight(0x65d7ff, 36, 42, 1.8);
+      pierGlow.position.set(-83, 10, -72);
+      scene.add(pierGlow);
+    }
+
+    function addSkyDome() {
+      const vertexShader = `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+      const fragmentShader = `
+        varying vec3 vWorldPosition;
+        void main() {
+          float h = normalize(vWorldPosition).y * 0.5 + 0.5;
+          vec3 horizon = vec3(0.92, 0.66, 0.50);
+          vec3 upper = vec3(0.30, 0.49, 0.66);
+          vec3 night = vec3(0.08, 0.10, 0.14);
+          vec3 sky = mix(horizon, upper, smoothstep(0.18, 0.92, h));
+          sky = mix(night, sky, smoothstep(0.03, 0.28, h));
+          gl_FragColor = vec4(sky, 1.0);
+        }
+      `;
+      const sky = new THREE.Mesh(
+        new THREE.SphereGeometry(360, 48, 24),
+        new THREE.ShaderMaterial({ vertexShader, fragmentShader, side: THREE.BackSide, depthWrite: false })
+      );
+      sky.renderOrder = -10;
+      scene.add(sky);
+    }
+
+    function addMoonAndStars() {
+      moon = new THREE.Mesh(
+        new THREE.SphereGeometry(6.5, 40, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfff4cf })
+      );
+      moon.position.set(0, 62, -138);
+      moon.visible = false;
+      scene.add(moon);
+
+      stars = new THREE.Group();
+      for (let i = 0; i < 140; i++) {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(0.045 + Math.random() * 0.07, 6, 4), new THREE.MeshBasicMaterial({ color: 0xf9fbff }));
+        const angle = Math.random() * TAU;
+        const radius = 80 + Math.random() * 130;
+        star.position.set(Math.cos(angle) * radius, 26 + Math.random() * 74, Math.sin(angle) * radius - 40);
+        stars.add(star);
+      }
+      stars.visible = false;
+      scene.add(stars);
+    }
+
+    function makeTextTexture(text, options = {}) {
+      const canvas = document.createElement("canvas");
+      const width = options.width || 1024;
+      const height = options.height || 256;
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = options.background || "rgba(0,0,0,0)";
+      if (options.background) ctx.fillRect(0, 0, width, height);
+      ctx.font = `${options.weight || 900} ${options.size || 110}px ${options.font || "Arial Black, Impact, sans-serif"}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = options.strokeWidth || 10;
+      ctx.strokeStyle = options.stroke || "rgba(20,20,20,.75)";
+      ctx.fillStyle = options.color || "#fff1c0";
+      ctx.strokeText(text, width / 2, height / 2);
+      ctx.fillText(text, width / 2, height / 2);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return texture;
+    }
+
+    function makeFaceTexture() {
+      const image = new Image();
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#9b6047";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      image.addEventListener("load", () => {
+        ctx.clearRect(0, 0, 512, 512);
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(256, 252, 178, 218, 0, 0, TAU);
+        ctx.clip();
+        ctx.drawImage(image, 378, 18, 440, 600, 64, 0, 384, 512);
+        const gradient = ctx.createRadialGradient(256, 226, 120, 256, 256, 252);
+        gradient.addColorStop(0, "rgba(255,255,255,0)");
+        gradient.addColorStop(1, "rgba(77,44,31,0.28)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.restore();
+        texture.needsUpdate = true;
+      });
+      image.addEventListener("error", () => {
+        showToast("Jasvinder portrait could not load");
+      });
+      image.src = "./assets/images/IMG_1503.jpg";
+      return texture;
+    }
+
+    const faceTexture = makeFaceTexture();
+    const textureLoader = new THREE.TextureLoader();
+    const jasvinderPortrait = "./assets/images/IMG_1503.jpg";
+    const viggoPortrait = "./assets/images/viggo_tarasov.webp";
+    const henchmanPortrait = "./assets/images/hencmen.jpeg";
+    const henchmanTexture = textureLoader.load(henchmanPortrait);
+    henchmanTexture.colorSpace = THREE.SRGBColorSpace;
+    const viggoTexture = textureLoader.load(viggoPortrait);
+    viggoTexture.colorSpace = THREE.SRGBColorSpace;
+
+    function showDialogue(name, text, icon = jasvinderPortrait, duration = 5, mode = "speaking") {
+      hideExposition();
+      hud.speakerIcon.src = icon;
+      hud.dialogueMode.textContent = mode === "scene" ? "Scene exposition" : `${name} speaks`;
+      hud.dialogueName.textContent = name;
+      hud.dialogueText.textContent = text;
+      hud.dialogue.classList.add("visible");
+      game.storyTimer = duration;
+    }
+
+    function queueDialogue(delay, name, text, icon = jasvinderPortrait, duration = 5, mode = "speaking") {
+      window.setTimeout(() => {
+        if (!game.started || game.level !== 0) return;
+        showDialogue(name, text, icon, duration, mode);
+      }, delay);
+    }
+
+    function showScene(text, duration = 5) {
+      hideDialogue();
+      hud.expositionText.textContent = text;
+      hud.exposition.classList.add("visible");
+      game.storyTimer = duration;
+    }
+
+    function showTutorial(title, text, hint = "Click to continue", tutorial = "general") {
+      game.paused = true;
+      game.tutorial = tutorial;
+      hud.tutorialTitle.textContent = title;
+      hud.tutorialText.textContent = text;
+      hud.tutorialHint.textContent = hint;
+      hud.tutorial.classList.add("visible");
+    }
+
+    function hideTutorial() {
+      game.paused = false;
+      game.tutorial = null;
+      hud.tutorial.classList.remove("visible");
+    }
+
+    function hideDialogue() {
+      hud.dialogue.classList.remove("visible");
+    }
+
+    function hideExposition() {
+      hud.exposition.classList.remove("visible");
+    }
+
+    function setMusic(src, volume = 0.55) {
+      if (game.currentTrack === src) return;
+      game.currentTrack = src;
+      hud.soundtrack.src = src;
+      hud.soundtrack.loop = true;
+      hud.soundtrack.volume = volume;
+      hud.soundtrack.play().catch(() => {});
+    }
+
+    function addGround() {
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220, 32, 32), materials.asphalt);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const sidewalkGeo = new RoundedBoxGeometry(220, 0.22, 20, 4, 0.18);
+      for (const z of [-32, 32]) {
+        const walk = new THREE.Mesh(sidewalkGeo, materials.sidewalk);
+        walk.position.set(0, 0.05, z);
+        walk.receiveShadow = true;
+        scene.add(walk);
+      }
+
+      const stripeGeo = new RoundedBoxGeometry(3.5, 0.04, 0.32, 3, 0.04);
+      for (let x = -95; x <= 95; x += 11) {
+        const lane = new THREE.Mesh(stripeGeo, materials.lane);
+        lane.position.set(x, 0.08, 0);
+        scene.add(lane);
+      }
+
+      const beach = new THREE.Mesh(new THREE.PlaneGeometry(130, 36, 28, 10), materials.sand);
+      beach.rotation.x = -Math.PI / 2;
+      beach.position.set(-64, 0.04, -78);
+      scene.add(beach);
+    }
+
+    function addBuilding(x, z, w, h, d, color = 0x333842) {
+      const mat = new THREE.MeshStandardMaterial({ color, map: facadeTexture, roughness: 0.62, metalness: 0.08 });
+      const building = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 4, 0.18), mat);
+      building.position.set(x, h / 2, z);
+      building.castShadow = true;
+      building.receiveShadow = true;
+      scene.add(building);
+      obstacles.push({ mesh: building, radius: Math.max(w, d) * 0.58 + 1.1 });
+
+      const windowMat = new THREE.MeshBasicMaterial({ color: color % 2 ? 0xf7d178 : 0x5fe6ff });
+      const rows = Math.max(2, Math.floor(h / 3));
+      const cols = Math.max(2, Math.floor(w / 2.5));
+      for (let row = 1; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          if ((row + col + Math.floor(x)) % 3 === 0) continue;
+          const win = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.62), windowMat);
+          win.position.set(x - w / 2 + 1 + col * (w - 2) / Math.max(1, cols - 1), row * h / rows, z + d / 2 + 0.011);
+          scene.add(win);
+        }
+      }
+      return building;
+    }
+
+    function addPalm(x, z, scale = 1) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * scale, 0.38 * scale, 7.4 * scale, 16), materials.trunk);
+      trunk.position.y = 3.5 * scale;
+      trunk.rotation.z = (Math.random() - 0.5) * 0.08;
+      trunk.castShadow = true;
+      group.add(trunk);
+
+      for (let i = 0; i < 13; i++) {
+        const frond = new THREE.Mesh(new THREE.PlaneGeometry(5.8 * scale, 1.28 * scale, 8, 2), materials.palm);
+        frond.position.y = 7.45 * scale + Math.sin(i) * 0.08;
+        frond.rotation.z = -0.18 + Math.sin(i * 1.7) * 0.12;
+        frond.rotation.y = i * TAU / 13;
+        frond.rotation.x = 0.28 + Math.sin(i * 0.8) * 0.12;
+        frond.position.x = Math.cos(i * TAU / 13) * 2.0 * scale;
+        frond.position.z = Math.sin(i * TAU / 13) * 2.0 * scale;
+        frond.castShadow = true;
+        group.add(frond);
+      }
+      scene.add(group);
+      return group;
+    }
+
+    function addHollywoodSign() {
+      const hill = new THREE.Mesh(new THREE.SphereGeometry(28, 44, 18), new THREE.MeshStandardMaterial({ color: 0x4d7a39, map: makeNoiseTexture({ base: 0x2f5529, accent: 0x91b96a, repeatX: 5, repeatY: 2 }), roughness: 0.95 }));
+      hill.position.set(45, 7.6, -112);
+      hill.rotation.y = Math.PI / 5;
+      hill.scale.set(1.9, 0.5, 0.78);
+      scene.add(hill);
+
+      const texture = makeTextTexture("HOLLYWOOD", { width: 1300, height: 220, size: 150, color: "#ffffff", stroke: "rgba(0,0,0,.72)", strokeWidth: 13 });
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(38, 6.2), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
+      sign.position.set(45, 19.2, -94);
+      sign.rotation.y = -0.16;
+      scene.add(sign);
+    }
+
+    function addPier() {
+      const pier = new THREE.Group();
+      pier.position.set(-78, 0, -74);
+      const deck = new THREE.Mesh(new RoundedBoxGeometry(38, 0.55, 9, 3, 0.12), new THREE.MeshStandardMaterial({ color: 0x8a6240, map: trunkTexture, bumpMap: trunkTexture, bumpScale: 0.045, roughness: 0.82 }));
+      deck.position.y = 1.2;
+      deck.castShadow = true;
+      deck.receiveShadow = true;
+      pier.add(deck);
+
+      for (let i = -17; i <= 17; i += 5.5) {
+        for (const z of [-3.3, 3.3]) {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 2.6, 8), materials.trunk);
+          post.position.set(i, 0.1, z);
+          pier.add(post);
+        }
+      }
+
+      const wheel = new THREE.Group();
+      wheel.position.set(-8, 8.6, 0);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(6.4, 0.16, 10, 48), materials.neonBlue);
+      ring.rotation.y = Math.PI / 2;
+      wheel.add(ring);
+      for (let i = 0; i < 12; i++) {
+        const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 6.1, 8), materials.neonPink);
+        spoke.position.x = 0;
+        spoke.rotation.z = i * TAU / 12;
+        wheel.add(spoke);
+        const car = new THREE.Mesh(new RoundedBoxGeometry(0.6, 0.42, 0.42, 3, 0.08), materials.neonPink);
+        car.position.set(0, Math.sin(i * TAU / 12) * 6.1, Math.cos(i * TAU / 12) * 6.1);
+        wheel.add(car);
+      }
+      pier.add(wheel);
+
+      const labelTexture = makeTextTexture("SANTA MONICA PIER", { width: 1000, height: 180, size: 86, color: "#ffeb90", stroke: "rgba(0,0,0,.6)", strokeWidth: 6 });
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(18, 3.2), new THREE.MeshBasicMaterial({ map: labelTexture, transparent: true }));
+      label.position.set(6, 5.1, 4.8);
+      pier.add(label);
+
+      scene.add(pier);
+    }
+
+    function addSkylineAndCity() {
+      const downtown = new THREE.Group();
+      downtown.position.set(82, 0, -88);
+      for (let i = 0; i < 14; i++) {
+        addBuilding(
+          downtown.position.x + (i - 7) * 5,
+          downtown.position.z + Math.sin(i) * 4,
+          3.5 + (i % 3),
+          14 + (i * 7 % 24),
+          4 + (i % 4),
+          [0x2f4654, 0x4b535a, 0x28333c, 0x5d554f][i % 4]
+        );
+      }
+
+      for (let i = 0; i < 16; i++) {
+        const x = -62 + i * 8.3;
+        addBuilding(x, i % 2 ? 44 : -44, 5 + (i % 3), 7 + (i % 5), 6 + (i % 4), [0x3b3e43, 0x575047, 0x35444d][i % 3]);
+      }
+
+      for (let i = 0; i < 30; i++) {
+        const side = i % 2 ? -1 : 1;
+        addPalm(-98 + i * 6.8, side * (18 + (i % 3) * 9), 0.85 + (i % 4) * 0.08);
+      }
+
+      addHollywoodSign();
+      addPier();
+    }
+
+    function addIntroScene() {
+      const spot = new THREE.Group();
+      spot.name = "introScene";
+      spot.position.set(0, 0.02, -7);
+
+      const dogMat = new THREE.MeshStandardMaterial({ color: 0x5b4635, roughness: 0.86 });
+      const darkDogMat = new THREE.MeshStandardMaterial({ color: 0x3f3026, roughness: 0.9 });
+      const pawMat = new THREE.MeshStandardMaterial({ color: 0x2b2019, roughness: 0.92 });
+      const collarMat = new THREE.MeshStandardMaterial({ color: 0xa3262f, roughness: 0.5 });
+      const dog = new THREE.Group();
+      dog.position.set(-1.12, 0.13, 0.02);
+      dog.rotation.set(0.08, -0.2, -0.15);
+      dog.scale.setScalar(1.28);
+
+      const dogBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.88, 10, 24), dogMat);
+      dogBody.scale.set(1.05, 0.82, 0.72);
+      dogBody.rotation.z = Math.PI / 2;
+      dogBody.castShadow = true;
+      const chest = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 12), darkDogMat);
+      chest.position.set(-0.34, 0.03, 0);
+      chest.scale.set(1.0, 0.72, 0.62);
+      const dogHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 22, 14), dogMat);
+      dogHead.position.set(-0.82, 0.08, 0.03);
+      dogHead.scale.set(1.1, 0.86, 0.78);
+      dogHead.castShadow = true;
+      const snout = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.19, 6, 12), darkDogMat);
+      snout.position.set(-1.02, 0.07, 0.04);
+      snout.rotation.z = Math.PI / 2;
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 6), materials.black);
+      nose.position.set(-1.13, 0.075, 0.045);
+
+      for (const side of [-1, 1]) {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.22, 12), darkDogMat);
+        ear.position.set(-0.82, 0.22, side * 0.13);
+        ear.rotation.set(0.5, 0.2 * side, Math.PI);
+        dog.add(ear);
+
+        const frontLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.42, 6, 10), pawMat);
+        frontLeg.position.set(-0.45, -0.18, side * 0.17);
+        frontLeg.rotation.z = Math.PI / 2.25;
+        const backLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.48, 6, 10), pawMat);
+        backLeg.position.set(0.34, -0.16, side * 0.18);
+        backLeg.rotation.z = Math.PI / 2.1;
+        const paw = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 6), pawMat);
+        paw.position.set(side < 0 ? -0.68 : 0.58, -0.22, side * 0.2);
+        paw.scale.set(1.35, 0.55, 0.8);
+        dog.add(frontLeg, backLeg, paw);
+      }
+
+      const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.42, 6, 10), darkDogMat);
+      tail.position.set(0.76, 0.07, 0);
+      tail.rotation.z = Math.PI / 2.7;
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.018, 8, 24), collarMat);
+      collar.position.set(-0.66, 0.08, 0.03);
+      collar.rotation.y = Math.PI / 2;
+      dog.add(dogBody, chest, dogHead, snout, nose, tail, collar);
+
+      const blanket = new THREE.Mesh(new THREE.PlaneGeometry(1.65, 1.05), new THREE.MeshStandardMaterial({ color: 0x2a2d31, roughness: 0.9, side: THREE.DoubleSide }));
+      blanket.rotation.x = -Math.PI / 2;
+      blanket.position.set(-1.08, 0.04, 0.02);
+      spot.add(blanket, dog);
+
+      const flowers = new THREE.Group();
+      for (let i = 0; i < 9; i++) {
+        const flower = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffdede : 0xfff3a0 }));
+        flower.position.set(-0.62 + Math.random() * 0.5, 0.1, -0.32 + Math.random() * 0.58);
+        flowers.add(flower);
+      }
+      spot.add(flowers);
+      scene.add(spot);
+      storyObjects.push(spot);
+    }
+
+    function addViggoBillboard() {
+      const frame = new THREE.Group();
+      frame.position.set(8.5, 5.1, -29);
+      const back = new THREE.Mesh(new RoundedBoxGeometry(4.2, 5.2, 0.18, 4, 0.12), new THREE.MeshStandardMaterial({ color: 0x17100f, roughness: 0.65 }));
+      const portrait = new THREE.Mesh(new THREE.PlaneGeometry(3.35, 4.25), new THREE.MeshBasicMaterial({ map: viggoTexture }));
+      portrait.position.z = -0.1;
+      portrait.rotation.y = Math.PI;
+      const labelTexture = makeTextTexture("VIGGO TARASOV", { width: 900, height: 180, size: 78, color: "#ffce8a", stroke: "rgba(0,0,0,.8)", strokeWidth: 8 });
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.72), new THREE.MeshBasicMaterial({ map: labelTexture, transparent: true }));
+      label.position.set(0, -2.12, -0.2);
+      label.rotation.y = Math.PI;
+      frame.add(back, portrait, label);
+      scene.add(frame);
+      viggoBillboard = frame;
+    }
+
+    function makeRedCar() {
+      const car = new THREE.Group();
+      car.name = "redLamborghini";
+      car.visible = false;
+      const redPaint = new THREE.MeshPhysicalMaterial({ color: 0xc01822, roughness: 0.22, metalness: 0.26, clearcoat: 1, clearcoatRoughness: 0.12 });
+      const body = new THREE.Mesh(new RoundedBoxGeometry(5.9, 0.72, 2.35, 5, 0.34), redPaint);
+      body.position.y = 0.62;
+      const nose = new THREE.Mesh(new RoundedBoxGeometry(2.35, 0.36, 2.18, 4, 0.22), redPaint);
+      nose.position.set(1.7, 0.92, 0);
+      nose.rotation.z = -0.05;
+      const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.72, 0.62, 1.42, 4, 0.2), materials.glass);
+      cabin.position.set(-0.46, 1.16, 0);
+      const spoiler = new THREE.Mesh(new RoundedBoxGeometry(1.65, 0.08, 2.5, 3, 0.04), materials.black);
+      spoiler.position.set(-2.52, 1.18, 0);
+      car.add(body, nose, cabin, spoiler);
+      for (const z of [-0.56, 0.56]) {
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 1.05, 12), materials.black);
+        barrel.rotation.z = Math.PI / 2;
+        barrel.position.set(2.72, 1.28, z);
+        car.add(barrel);
+      }
+      for (const sx of [-2.05, 2.05]) {
+        for (const sz of [-1.11, 1.11]) {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.32, 32), materials.black);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(sx, 0.42, sz);
+          car.add(wheel);
+        }
+      }
+      car.position.set(-8, 0, 10);
+      car.rotation.y = Math.PI;
+      scene.add(car);
+      return car;
+    }
+
+    function makeHelicopter() {
+      const heli = new THREE.Group();
+      heli.name = "helicopter";
+      heli.visible = false;
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.42, metalness: 0.28 });
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.72, 2.4, 12, 28), bodyMat);
+      body.rotation.z = Math.PI / 2;
+      body.position.y = 2.0;
+      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.64, 24, 14), materials.glass);
+      cockpit.position.set(1.25, 2.02, 0);
+      cockpit.scale.set(1.1, 0.72, 0.84);
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.16, 3.4, 12), bodyMat);
+      tail.rotation.z = Math.PI / 2;
+      tail.position.set(-2.3, 2.0, 0);
+      const rotor = new THREE.Group();
+      rotor.name = "mainRotor";
+      rotor.position.set(0, 2.9, 0);
+      for (let i = 0; i < 4; i++) {
+        const blade = new THREE.Mesh(new RoundedBoxGeometry(4.5, 0.045, 0.18, 2, 0.025), materials.black);
+        blade.rotation.y = i * Math.PI / 2;
+        blade.position.x = 1.3;
+        rotor.add(blade);
+      }
+      const skidMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.5, metalness: 0.45 });
+      for (const z of [-0.62, 0.62]) {
+        const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.4, 10), skidMat);
+        skid.rotation.z = Math.PI / 2;
+        skid.position.set(0, 1.18, z);
+        heli.add(skid);
+      }
+      heli.add(body, cockpit, tail, rotor);
+      heli.position.set(12, 0, 18);
+      scene.add(heli);
+      return heli;
+    }
+
+    function makeViggoHelicopter() {
+      const heli = makeHelicopter();
+      heli.name = "viggoHelicopter";
+      heli.visible = false;
+      const hanger = new THREE.Group();
+      hanger.name = "viggoHangingOut";
+      hanger.position.set(0.78, 1.72, -0.78);
+      const suitMat = new THREE.MeshStandardMaterial({ color: 0xb30f18, roughness: 0.48, metalness: 0.12 });
+      const redSuit = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.98, 10, 18), suitMat);
+      redSuit.position.set(0, -0.02, 0);
+      redSuit.rotation.z = -0.18;
+      const redCoat = new THREE.Mesh(new RoundedBoxGeometry(0.62, 1.18, 0.28, 4, 0.08), suitMat);
+      redCoat.position.set(0, -0.08, 0.02);
+      const viggoHead = new THREE.Mesh(new THREE.SphereGeometry(0.24, 22, 14), materials.enemySkin);
+      viggoHead.position.set(0.04, 0.74, -0.02);
+      const viggoFace = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.58), new THREE.MeshBasicMaterial({ map: viggoTexture, transparent: true, side: THREE.DoubleSide }));
+      viggoFace.name = "viggoFace";
+      viggoFace.position.set(0.04, 0.74, -0.265);
+      for (const side of [-1, 1]) {
+        const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.72, 8, 12), suitMat);
+        arm.position.set(side * 0.36, 0.12, -0.02);
+        arm.rotation.z = side * 0.58;
+        const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.82, 8, 12), suitMat);
+        leg.position.set(side * 0.14, -0.76, -0.02);
+        leg.rotation.z = side * 0.12;
+        hanger.add(arm, leg);
+      }
+      hanger.add(redSuit, redCoat, viggoHead, viggoFace);
+      heli.add(hanger);
+      heli.position.set(-24, 10, -46);
+      return heli;
+    }
+
+    function makeLimb(radius, height, material) {
+      const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(radius, height, 8, 18), material);
+      mesh.castShadow = true;
+      return mesh;
+    }
+
+    function makeWeapon(long = false) {
+      const group = new THREE.Group();
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, long ? 1.55 : 0.9, 14), materials.black);
+      barrel.rotation.z = Math.PI / 2;
+      barrel.position.x = long ? 0.52 : 0.2;
+      const grip = new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.48, 0.18, 3, 0.04), materials.black);
+      grip.position.set(long ? -0.15 : -0.08, -0.22, 0);
+      grip.rotation.z = -0.22;
+      group.add(barrel, grip);
+      if (long) {
+        const stock = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.19, 0.21, 3, 0.045), materials.black);
+        stock.position.set(-0.62, 0.02, 0);
+        const mag = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.66, 0.19, 3, 0.04), materials.black);
+        mag.position.set(0.14, -0.39, 0);
+        mag.rotation.z = -0.12;
+        group.add(stock, mag);
+      }
+      return group;
+    }
+
+    function createJasvinder() {
+      const group = player.group;
+      group.position.copy(player.position);
+
+      const coat = new THREE.Mesh(new THREE.CapsuleGeometry(0.62, 1.78, 14, 32), materials.coat);
+      coat.position.y = 2.3;
+      coat.scale.set(0.98, 1, 0.64);
+      coat.castShadow = true;
+      group.add(coat);
+      player.body = coat;
+
+      const shoulders = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.18, 8, 18), materials.coat);
+      shoulders.position.set(0, 3.05, -0.01);
+      shoulders.rotation.z = Math.PI / 2;
+      shoulders.scale.z = 0.72;
+      shoulders.castShadow = true;
+      group.add(shoulders);
+
+      const lapelLeft = new THREE.Mesh(new RoundedBoxGeometry(0.12, 1.35, 0.04, 3, 0.025), materials.black);
+      lapelLeft.position.set(-0.24, 2.72, -0.48);
+      lapelLeft.rotation.z = -0.35;
+      const lapelRight = lapelLeft.clone();
+      lapelRight.position.x = 0.24;
+      lapelRight.rotation.z = 0.35;
+      group.add(lapelLeft, lapelRight);
+
+      for (const side of [-1, 1]) {
+        const coatTail = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.55, 4, 6), materials.coat);
+        coatTail.position.set(side * 0.24, 1.33, 0.42);
+        coatTail.rotation.x = -0.18;
+        coatTail.rotation.z = side * 0.06;
+        coatTail.castShadow = true;
+        group.add(coatTail);
+      }
+
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 0.36, 20), materials.skin);
+      neck.position.y = 3.32;
+      neck.castShadow = true;
+      group.add(neck);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.46, 48, 28), materials.skin);
+      head.position.y = 3.78;
+      head.scale.set(0.9, 1.12, 0.82);
+      head.castShadow = true;
+      group.add(head);
+
+      const face = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.72, 0.92),
+        new THREE.MeshBasicMaterial({ map: faceTexture, transparent: true })
+      );
+      face.position.set(0, 3.79, -0.397);
+      face.rotation.y = Math.PI;
+      group.add(face);
+
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.48, 36, 18, 0, TAU, 0, Math.PI * 0.5), materials.hair);
+      hair.position.y = 4.09;
+      hair.scale.set(0.95, 0.42, 0.86);
+      hair.castShadow = true;
+      group.add(hair);
+
+      const beard = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.052, 8, 30, Math.PI * 1.25), materials.beard);
+      beard.position.set(0, 3.63, -0.32);
+      beard.rotation.set(0.1, 0, Math.PI * 0.88);
+      group.add(beard);
+
+      for (const side of [-1, 1]) {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), materials.skin);
+        ear.position.set(side * 0.41, 3.82, -0.02);
+        ear.scale.set(0.6, 1, 0.3);
+        group.add(ear);
+      }
+
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.07, 8, 28), materials.black);
+      collar.position.y = 3.25;
+      collar.rotation.x = Math.PI / 2;
+      group.add(collar);
+
+      for (const side of [-1, 1]) {
+        const arm = makeLimb(0.15, 1.38, materials.coat);
+        arm.name = side < 0 ? "leftUpperArm" : "rightUpperArm";
+        arm.position.set(side * 0.72, 2.5, -0.06);
+        arm.rotation.z = side * 0.08;
+        group.add(arm);
+        const forearm = makeLimb(0.12, 0.92, materials.coat);
+        forearm.name = side < 0 ? "leftForearm" : "rightForearm";
+        forearm.position.set(side * 0.82, 1.85, -0.44);
+        forearm.rotation.x = 0.92;
+        forearm.rotation.z = side * 0.14;
+        group.add(forearm);
+
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 12), materials.skin);
+        hand.position.set(side * 0.83, 1.58, -0.92);
+        hand.castShadow = true;
+        group.add(hand);
+
+        const leg = makeLimb(0.17, 1.38, materials.black);
+        leg.name = side < 0 ? "leftLeg" : "rightLeg";
+        leg.position.set(side * 0.24, 0.78, 0);
+        group.add(leg);
+
+        const boot = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.18, 0.58, 4, 0.08), materials.black);
+        boot.position.set(side * 0.24, 0.1, -0.1);
+        boot.castShadow = true;
+        group.add(boot);
+      }
+
+      const weapon = makeWeapon(false);
+      weapon.name = "sidearm";
+      weapon.position.set(0.62, 2.05, -0.92);
+      weapon.rotation.set(0, 0.08, -0.08);
+      group.add(weapon);
+
+      const ak = makeWeapon(true);
+      ak.name = "ak";
+      ak.visible = false;
+      ak.position.set(0.52, 2.28, -0.96);
+      ak.rotation.set(0.04, 0, -0.04);
+      group.add(ak);
+
+      player.bones = {
+        leftUpperArm: group.getObjectByName("leftUpperArm"),
+        rightUpperArm: group.getObjectByName("rightUpperArm"),
+        leftForearm: group.getObjectByName("leftForearm"),
+        rightForearm: group.getObjectByName("rightForearm"),
+        leftLeg: group.getObjectByName("leftLeg"),
+        rightLeg: group.getObjectByName("rightLeg"),
+        sidearm: weapon,
+        ak
+      };
+
+      scene.add(group);
+    }
+
+    function createEnemy(x, z, tier = 1) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      const suit = new THREE.Mesh(new THREE.CapsuleGeometry(0.48, 1.3, 10, 22), materials.enemySuit);
+      suit.position.y = 2.04;
+      suit.scale.z = 0.68;
+      suit.castShadow = true;
+      group.add(suit);
+
+      const shirt = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.62, 0.04, 3, 0.025), materials.enemyShirt);
+      shirt.position.set(0, 2.42, -0.38);
+      group.add(shirt);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 28, 18), materials.enemySkin);
+      head.position.y = 3.18;
+      head.castShadow = true;
+      group.add(head);
+
+      const shades = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.08, 0.04, 3, 0.018), materials.black);
+      shades.position.set(0, 3.23, -0.31);
+      group.add(shades);
+
+      const henchFace = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.66), new THREE.MeshBasicMaterial({ map: henchmanTexture, transparent: true }));
+      henchFace.position.set(0, 3.18, -0.34);
+      henchFace.rotation.y = Math.PI;
+      group.add(henchFace);
+
+      for (const side of [-1, 1]) {
+        const arm = makeLimb(0.105, 1.03, materials.enemySuit);
+        arm.position.set(side * 0.55, 2.08, -0.08);
+        arm.rotation.z = side * 0.18;
+        group.add(arm);
+        const leg = makeLimb(0.13, 1.12, materials.black);
+        leg.position.set(side * 0.19, 0.64, 0);
+        group.add(leg);
+      }
+
+      const weapon = makeWeapon(false);
+      weapon.position.set(0.42, 1.95, -0.72);
+      group.add(weapon);
+
+      scene.add(group);
+      const enemy = {
+        group,
+        radius: 0.74,
+        health: 65 + tier * 16,
+        maxHealth: 65 + tier * 16,
+        speed: 4.2 + tier * 0.25,
+        fireCooldown: 5.5 + Math.random() * 3.0,
+        dodgeTimer: Math.random() * 1.2,
+        tier
+      };
+      enemies.push(enemy);
+      damageables.push(group);
+      return enemy;
+    }
+
+    function spawnWave() {
+      const count = 2 + Math.min(5, game.wave + game.level);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * TAU;
+        const dist = 54 + Math.random() * 46;
+        const x = player.position.x + Math.cos(angle) * dist;
+        const z = player.position.z + Math.sin(angle) * dist;
+        createEnemy(clamp(x, -92, 92), clamp(z, -92, 92), game.wave);
+      }
+      showToast(`Level ${game.level} · Wave ${game.wave}: Viggo's crew inbound`);
+      if (!game.henchmenStarted && game.level === 1) {
+        game.henchmenStarted = true;
+        showDialogue("Henchman", "There he is. Start shooting!", henchmanPortrait, 4);
+      }
+    }
+
+    function createBullet(origin, direction, owner = "player", power = 34) {
+      const bullet = new THREE.Mesh(
+        new THREE.SphereGeometry(owner === "player" ? 0.08 : 0.1, 10, 8),
+        owner === "player" ? materials.muzzle : materials.red
+      );
+      bullet.position.copy(origin);
+      bullet.castShadow = false;
+      scene.add(bullet);
+      const list = owner === "player" ? playerBullets : enemyBullets;
+      list.push({
+        mesh: bullet,
+        velocity: direction.clone().normalize().multiplyScalar(owner === "player" ? 74 : 38),
+        life: owner === "player" ? 1.25 : 2.6,
+        power
+      });
+    }
+
+    function addMuzzleFlash(origin, scale = 1) {
+      const flash = new THREE.Mesh(new THREE.SphereGeometry(0.14 * scale, 10, 8), materials.muzzle);
+      flash.position.copy(origin);
+      scene.add(flash);
+      particles.push({ mesh: flash, velocity: new THREE.Vector3(0, 1.4, 0), life: 0.08, maxLife: 0.08, scale });
+    }
+
+    function addTracer(origin, directionOrEnd, length = 8) {
+      const direction = directionOrEnd.clone().sub(origin);
+      const finalLength = direction.length() > 1 ? direction.length() : length;
+      if (direction.length() <= 1) direction.copy(directionOrEnd).normalize().multiplyScalar(finalLength);
+      const normalized = direction.clone().normalize();
+      const tracer = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.012, finalLength, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfff1a1, transparent: true, opacity: 0.86 })
+      );
+      tracer.position.copy(origin).add(normalized.multiplyScalar(finalLength * 0.5));
+      tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+      scene.add(tracer);
+      particles.push({ mesh: tracer, velocity: new THREE.Vector3(), life: 0.13, maxLife: 0.13, scale: 1 });
+    }
+
+    function addImpact(position, color = 0xffd36e, count = 8) {
+      for (let i = 0; i < count; i++) {
+        const spark = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), new THREE.MeshBasicMaterial({ color }));
+        spark.position.copy(position);
+        scene.add(spark);
+        const velocity = new THREE.Vector3(
+          (Math.random() - 0.5) * 7,
+          Math.random() * 5 + 1,
+          (Math.random() - 0.5) * 7
+        );
+        particles.push({ mesh: spark, velocity, life: 0.42, maxLife: 0.42, scale: 1 });
+      }
+    }
+
+    function shootPlayer(power = 34, spread = 0.012) {
+      if (player.shootCooldown > 0 && game.specialActive <= 0) return;
+      const shot = computeCrosshairShot();
+      const direction = shot.impactPoint.clone().sub(shot.muzzle).normalize();
+      direction.x += (Math.random() - 0.5) * spread;
+      direction.y += (Math.random() - 0.5) * spread;
+      direction.z += (Math.random() - 0.5) * spread;
+      const actualImpact = raycastFromMuzzle(shot.muzzle, direction, shot.muzzle.distanceTo(shot.impactPoint) + 8);
+      aimWeaponAt(actualImpact.point);
+      addMuzzleFlash(shot.muzzle, game.specialActive > 0 ? 1.35 : 1);
+      addTracer(shot.muzzle, actualImpact.point);
+      addImpact(actualImpact.point, 0xfff1a1, actualImpact.enemy ? 8 : 4);
+      if (actualImpact.enemy) {
+        actualImpact.enemy.health -= power;
+      }
+      if (game.bossActive && actualImpact.object && viggoHelicopter && isDescendantOf(actualImpact.object, viggoHelicopter)) {
+        damageBoss(power * 0.22, actualImpact.point);
+      }
+      drawDebugAim(shot.cameraOrigin, shot.cameraTarget, shot.muzzle, actualImpact.point);
+      if (game.vehicleMode === "car" && redCar) {
+        const alternateMuzzle = getCarMuzzleWorldPosition(-0.86);
+        addMuzzleFlash(alternateMuzzle, 1.08);
+        addTracer(alternateMuzzle, actualImpact.point);
+      }
+      game.cameraShake = Math.min(0.22, game.cameraShake + 0.055);
+      game.recoil = Math.min(0.16, game.recoil + 0.035);
+      player.shootCooldown = game.specialActive > 0 ? 0.045 : 0.16;
+      if (game.specialUnlocked) game.specialCharge = Math.min(1, game.specialCharge + 0.006);
+      game.forcedShotTarget = null;
+    }
+
+    function getRaycastObjects() {
+      const objects = obstacles.map((entry) => entry.mesh).filter(Boolean);
+      for (const enemy of enemies) objects.push(enemy.group);
+      if (game.bossActive && viggoHelicopter) objects.push(viggoHelicopter);
+      return objects;
+    }
+
+    function computeCrosshairShot() {
+      const cameraOrigin = camera.position.clone();
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      raycaster.set(cameraOrigin, cameraDirection);
+      raycaster.far = 220;
+      const cameraHits = raycaster.intersectObjects(getRaycastObjects(), true);
+      const cameraTarget = game.forcedShotTarget
+        ? game.forcedShotTarget.clone()
+        : (cameraHits.length ? cameraHits[0].point.clone() : cameraOrigin.clone().add(cameraDirection.multiplyScalar(150)));
+      return {
+        cameraOrigin,
+        cameraTarget,
+        impactPoint: cameraTarget,
+        muzzle: getMuzzleWorldPosition()
+      };
+    }
+
+    function getMuzzleWorldPosition() {
+      if (game.vehicleMode === "car" && redCar) {
+        return getCarMuzzleWorldPosition(0.86);
+      }
+      if (game.vehicleMode === "helicopter" && helicopter) {
+        const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+        return helicopter.position.clone().add(new THREE.Vector3(0, 1.85, 0)).add(forward.multiplyScalar(1.25));
+      }
+      const weapon = game.specialActive > 0 ? player.bones.ak : player.bones.sidearm;
+      if (weapon) return weapon.localToWorld(new THREE.Vector3(game.specialActive > 0 ? 1.35 : 0.82, 0.02, 0));
+      return player.position.clone().add(new THREE.Vector3(0.48, 2.25, 0));
+    }
+
+    function getCarMuzzleWorldPosition(side = 0.86) {
+      const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+      return redCar.position.clone()
+        .add(new THREE.Vector3(0, 1.32, 0))
+        .add(forward.multiplyScalar(3.15))
+        .add(right.multiplyScalar(side));
+    }
+
+    function raycastFromMuzzle(origin, direction, distance) {
+      raycaster.set(origin, direction.clone().normalize());
+      raycaster.far = distance;
+      const hits = raycaster.intersectObjects(getRaycastObjects(), true);
+      if (hits.length) {
+        return {
+          point: hits[0].point.clone(),
+          object: hits[0].object,
+          enemy: findEnemyForObject(hits[0].object)
+        };
+      }
+      return { point: origin.clone().add(direction.clone().normalize().multiplyScalar(distance)), object: null, enemy: null };
+    }
+
+    function findEnemyForObject(object) {
+      for (const enemy of enemies) {
+        if (isDescendantOf(object, enemy.group)) return enemy;
+      }
+      return null;
+    }
+
+    function isDescendantOf(object, parent) {
+      let current = object;
+      while (current) {
+        if (current === parent) return true;
+        current = current.parent;
+      }
+      return false;
+    }
+
+    function aimWeaponAt(point) {
+      if (game.vehicleMode !== "onFoot") return;
+      const weapon = game.specialActive > 0 ? player.bones.ak : player.bones.sidearm;
+      if (weapon) weapon.lookAt(point);
+      const localPitch = clamp(Math.atan2(point.y - (player.position.y + 2.2), point.distanceTo(player.position)) * -1, -0.65, 0.35);
+      if (player.bones.rightUpperArm) player.bones.rightUpperArm.rotation.x = 0.35 + localPitch;
+      if (player.bones.rightForearm) player.bones.rightForearm.rotation.x = 0.82 + localPitch;
+      if (player.bones.leftUpperArm) player.bones.leftUpperArm.rotation.x = 0.15 + localPitch * 0.7;
+      if (player.bones.leftForearm) player.bones.leftForearm.rotation.x = 0.72 + localPitch * 0.6;
+    }
+
+    function drawDebugAim(cameraOrigin, cameraTarget, muzzle, impact) {
+      for (const object of game.debugObjects) scene.remove(object);
+      game.debugObjects.length = 0;
+      if (!game.debugAim) return;
+      const cameraLine = makeDebugLine(cameraOrigin, cameraTarget, 0x35d7ff);
+      const muzzleLine = makeDebugLine(muzzle, impact, 0xfff173);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3b3b }));
+      dot.position.copy(impact);
+      scene.add(cameraLine, muzzleLine, dot);
+      game.debugObjects.push(cameraLine, muzzleLine, dot);
+    }
+
+    function makeDebugLine(a, b, color) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([a, b]);
+      return new THREE.Line(geometry, new THREE.LineBasicMaterial({ color }));
+    }
+
+    function getAimDirection() {
+      const direction = new THREE.Vector3(
+        Math.sin(player.yaw) * Math.cos(player.pitch),
+        Math.sin(player.pitch),
+        Math.cos(player.yaw) * Math.cos(player.pitch)
+      );
+      return direction.normalize();
+    }
+
+    function updateCamera(dt) {
+      const aim = getAimDirection();
+      if (game.frontCameraTimer > 0) {
+        game.frontCameraTimer = Math.max(0, game.frontCameraTimer - dt);
+        if (game.frontCameraTimer <= 0) game.frontCamera = false;
+      }
+      if (game.frontCamera) {
+        const facePoint = player.position.clone().add(new THREE.Vector3(0, game.vehicleMode === "helicopter" ? 4.2 : 3.66, 0));
+        const front = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+        const target = facePoint.clone().add(front.multiplyScalar(4.2)).add(new THREE.Vector3(0, 0.1, 0));
+        camera.position.lerp(target, 1 - Math.pow(0.004, dt));
+        camera.lookAt(facePoint);
+        return;
+      }
+      if (game.vehicleMode === "car" && redCar) {
+        const back = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw)).multiplyScalar(-10);
+        const target = redCar.position.clone().add(back).add(new THREE.Vector3(0, 5.0, 0));
+        camera.position.lerp(target, 1 - Math.pow(0.003, dt));
+        camera.lookAt(redCar.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+        return;
+      }
+      if (game.vehicleMode === "helicopter" && helicopter) {
+        const back = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw)).multiplyScalar(-13);
+        const target = helicopter.position.clone().add(back).add(new THREE.Vector3(0, 6.2, 0));
+        camera.position.lerp(target, 1 - Math.pow(0.004, dt));
+        camera.lookAt(helicopter.position.clone().add(new THREE.Vector3(0, 2.0, 0)));
+        return;
+      }
+      const shoulder = player.position.clone()
+        .add(new THREE.Vector3(0, 2.92, 0));
+      const cameraRight = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+      const sideSign = 1;
+      const target = shoulder.clone()
+        .sub(aim.clone().multiplyScalar(8.15))
+        .add(cameraRight.multiplyScalar(2.45 * sideSign))
+        .add(new THREE.Vector3(0, 1.18 + game.recoil, 0));
+      camera.position.lerp(target, 1 - Math.pow(0.0015, dt));
+      if (game.cameraShake > 0) {
+        camera.position.x += (Math.random() - 0.5) * game.cameraShake;
+        camera.position.y += (Math.random() - 0.5) * game.cameraShake * 0.45;
+        game.cameraShake = Math.max(0, game.cameraShake - dt * 0.7);
+      }
+      game.recoil = Math.max(0, game.recoil - dt * 0.9);
+      const lookTarget = shoulder.clone()
+        .add(aim.multiplyScalar(24))
+        .sub(cameraRight.multiplyScalar(0.82 * sideSign))
+        .add(new THREE.Vector3(0, -0.18, 0));
+      camera.lookAt(lookTarget);
+    }
+
+    function updatePlayer(dt) {
+      player.shootCooldown = Math.max(0, player.shootCooldown - dt);
+      player.invulnerable = Math.max(0, player.invulnerable - dt);
+
+      if (game.vehicleMode === "car") {
+        updateCar(dt);
+        return;
+      }
+      if (game.vehicleMode === "helicopter") {
+        updateHelicopter(dt);
+        return;
+      }
+
+      const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+      const move = new THREE.Vector3();
+      if (keys.has("KeyW")) move.add(forward);
+      if (keys.has("KeyS")) move.sub(forward);
+      if (keys.has("KeyD")) move.sub(right);
+      if (keys.has("KeyA")) move.add(right);
+      if (move.lengthSq() > 0) move.normalize();
+
+      const speed = game.specialActive > 0 ? 11.5 : 8.2;
+      player.velocity.x = lerp(player.velocity.x, move.x * speed, 1 - Math.pow(0.002, dt));
+      player.velocity.z = lerp(player.velocity.z, move.z * speed, 1 - Math.pow(0.002, dt));
+      player.velocity.y -= 28 * dt;
+
+      if (keys.has("Space") && player.grounded) {
+        player.velocity.y = 10.4;
+        player.grounded = false;
+      }
+
+      player.position.addScaledVector(player.velocity, dt);
+      if (player.position.y <= 0) {
+        player.position.y = 0;
+        player.velocity.y = 0;
+        player.grounded = true;
+      }
+
+      player.position.x = clamp(player.position.x, -102, 102);
+      player.position.z = clamp(player.position.z, -102, 102);
+
+      for (const obstacle of obstacles) {
+        const delta = player.position.clone().sub(obstacle.mesh.position);
+        delta.y = 0;
+        const dist = delta.length();
+        const minDist = obstacle.radius + player.radius;
+        if (dist > 0.001 && dist < minDist) {
+          delta.normalize();
+          player.position.addScaledVector(delta, minDist - dist);
+        }
+      }
+
+      player.group.position.copy(player.position);
+      player.group.rotation.y = player.yaw + Math.PI;
+      player.group.getObjectByName("sidearm").visible = game.specialActive <= 0;
+      player.group.getObjectByName("ak").visible = game.specialActive > 0;
+      updateCharacterAnimation(dt, move.lengthSq());
+    }
+
+    function updateCharacterAnimation(dt, moveAmount) {
+      const speed = Math.hypot(player.velocity.x, player.velocity.z);
+      player.walkCycle += dt * (2.8 + speed * 0.85);
+      const stride = Math.sin(player.walkCycle) * clamp(speed / 8, 0, 1);
+      const counter = Math.cos(player.walkCycle) * clamp(speed / 8, 0, 1);
+      const aiming = game.specialActive > 0 ? 0.38 : 0;
+      if (!player.bones.leftLeg) return;
+      player.group.position.y = player.position.y + Math.abs(counter) * 0.045;
+      player.bones.leftLeg.rotation.x = stride * 0.34;
+      player.bones.rightLeg.rotation.x = -stride * 0.34;
+      player.bones.leftUpperArm.rotation.x = -stride * 0.18 + aiming;
+      player.bones.rightUpperArm.rotation.x = stride * 0.12 + 0.18 + aiming;
+      player.bones.leftForearm.rotation.x = 0.82 + Math.max(0, -stride) * 0.14;
+      player.bones.rightForearm.rotation.x = 0.92 + Math.max(0, stride) * 0.12;
+      if (game.introActive) {
+        player.bones.leftUpperArm.rotation.x = -2.35;
+        player.bones.rightUpperArm.rotation.x = -2.35;
+        player.bones.leftForearm.rotation.x = -1.1;
+        player.bones.rightForearm.rotation.x = -1.1;
+      }
+    }
+
+    function updateCar(dt) {
+      if (!redCar) return;
+      const turn = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
+      const throttle = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -0.55 : 0);
+      player.yaw += turn * dt * (1.75 + Math.min(1.2, Math.abs(throttle)));
+      const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      const targetSpeed = throttle * 24;
+      player.velocity.x = lerp(player.velocity.x, forward.x * targetSpeed, 1 - Math.pow(0.01, dt));
+      player.velocity.z = lerp(player.velocity.z, forward.z * targetSpeed, 1 - Math.pow(0.01, dt));
+      player.position.addScaledVector(player.velocity, dt);
+      player.position.x = clamp(player.position.x, -100, 100);
+      player.position.z = clamp(player.position.z, -100, 100);
+      redCar.position.copy(player.position);
+      redCar.rotation.y = player.yaw;
+      player.group.visible = false;
+    }
+
+    function updateHelicopter(dt) {
+      if (!helicopter) return;
+      const turn = (keys.has("KeyA") ? 1 : 0) + (keys.has("KeyD") ? -1 : 0);
+      const forwardInput = (keys.has("KeyW") ? 1 : 0) + (keys.has("KeyS") ? -0.65 : 0);
+      const lift = (keys.has("Space") ? 1 : 0) + (keys.has("ShiftLeft") ? -1 : 0);
+      player.yaw += turn * dt * 1.35;
+      const forward = new THREE.Vector3(Math.sin(player.yaw), 0, Math.cos(player.yaw));
+      player.velocity.x = lerp(player.velocity.x, forward.x * forwardInput * 18, 1 - Math.pow(0.012, dt));
+      player.velocity.z = lerp(player.velocity.z, forward.z * forwardInput * 18, 1 - Math.pow(0.012, dt));
+      player.velocity.y = lerp(player.velocity.y, lift * 8 + (game.finalFlight ? 3.6 : 0), 1 - Math.pow(0.02, dt));
+      player.position.addScaledVector(player.velocity, dt);
+      player.position.y = clamp(player.position.y, 3, 36);
+      player.position.x = clamp(player.position.x, -110, 110);
+      player.position.z = clamp(player.position.z, -120, 110);
+      helicopter.position.copy(player.position);
+      helicopter.rotation.y = player.yaw;
+      const rotor = helicopter.getObjectByName("mainRotor");
+      if (rotor) rotor.rotation.y += dt * 26;
+      player.group.visible = false;
+      if (game.finalFlight) {
+        player.position.y = Math.min(70, player.position.y + dt * 1.4);
+        player.position.z -= dt * 4.5;
+        helicopter.position.copy(player.position);
+      }
+    }
+
+    function updateEnemies(dt) {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        const toPlayer = player.position.clone().sub(enemy.group.position);
+        const distance = toPlayer.length();
+        const dir = toPlayer.clone().normalize();
+
+        enemy.dodgeTimer -= dt;
+        const strafe = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(Math.sin(performance.now() * 0.003 + i) * 0.55);
+        const desired = dir.clone().multiplyScalar(distance > 9 ? 1 : -0.18).add(strafe).normalize();
+        enemy.group.position.addScaledVector(desired, enemy.speed * dt);
+        enemy.group.position.x = clamp(enemy.group.position.x, -104, 104);
+        enemy.group.position.z = clamp(enemy.group.position.z, -104, 104);
+        enemy.group.lookAt(player.position.x, enemy.group.position.y, player.position.z);
+
+        enemy.fireCooldown -= dt;
+        if (enemy.fireCooldown <= 0 && distance < 50 && !game.over) {
+          const origin = enemy.group.position.clone().add(new THREE.Vector3(0, 2.12, 0));
+          const shotDir = player.position.clone().add(new THREE.Vector3(0, 1.7, 0)).sub(origin).normalize();
+          shotDir.x += (Math.random() - 0.5) * 0.09;
+          shotDir.y += (Math.random() - 0.5) * 0.05;
+          shotDir.z += (Math.random() - 0.5) * 0.09;
+          createBullet(origin, shotDir, "enemy", 1 + Math.floor(game.level * 0.5) + Math.floor(game.wave * 0.2));
+          addMuzzleFlash(origin, 0.75);
+          enemy.fireCooldown = Math.max(2.2, 5.0 - game.wave * 0.04 + Math.random() * 2.0);
+        }
+
+        if (enemy.health <= 0) {
+          defeatEnemy(enemy, i);
+        }
+      }
+    }
+
+    function updateBoss(dt) {
+      if (!game.bossActive || !viggoHelicopter) return;
+      const orbit = performance.now() * 0.0007;
+      const center = player.position.clone().add(new THREE.Vector3(0, 10, -18));
+      viggoHelicopter.visible = true;
+      viggoHelicopter.position.set(
+        center.x + Math.cos(orbit) * 34,
+        14 + Math.sin(orbit * 1.6) * 5,
+        center.z + Math.sin(orbit) * 30
+      );
+      viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
+      const rotor = viggoHelicopter.getObjectByName("mainRotor");
+      if (rotor) rotor.rotation.y += dt * 34;
+      updateViggoFaceBillboard();
+
+      game.bossFireTimer -= dt;
+      if (game.bossFireTimer <= 0) {
+        const origin = viggoHelicopter.position.clone().add(new THREE.Vector3(0, 1.4, 0));
+        const direction = player.position.clone().add(new THREE.Vector3(0, 2.2, 0)).sub(origin).normalize();
+        createBullet(origin, direction, "enemy", 4);
+        addTracer(origin, origin.clone().add(direction.multiplyScalar(24)));
+        game.bossFireTimer = 1.15 + Math.random() * 0.8;
+      }
+      game.rocketCooldown = Math.max(0, game.rocketCooldown - dt);
+    }
+
+    function updateViggoFaceBillboard() {
+      if (!viggoHelicopter) return;
+      const face = viggoHelicopter.getObjectByName("viggoFace");
+      if (face) face.lookAt(camera.position);
+    }
+
+    function shootRocket() {
+      if (!game.bossActive || game.rocketCooldown > 0 || !viggoHelicopter) return;
+      const muzzle = helicopter ? helicopter.position.clone().add(new THREE.Vector3(0.8, 1.6, -0.3)) : getMuzzleWorldPosition();
+      const target = viggoHelicopter.position.clone().add(new THREE.Vector3(0, 1.8, 0));
+      const direction = target.clone().sub(muzzle).normalize();
+      const rocket = makeRocketMesh();
+      rocket.position.copy(muzzle);
+      rocket.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), direction);
+      scene.add(rocket);
+      rockets.push({
+        mesh: rocket,
+        velocity: direction.multiplyScalar(34),
+        life: 4.2,
+        damage: 26,
+        smokeTimer: 0
+      });
+      addMuzzleFlash(muzzle, 1.75);
+      game.rocketCooldown = 1.35;
+      game.cameraShake = Math.min(0.35, game.cameraShake + 0.18);
+      showToast("Rocket fired");
+    }
+
+    function makeRocketMesh() {
+      const group = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xc5141f, roughness: 0.28, metalness: 0.28, emissive: 0x4e0308, emissiveIntensity: 0.55 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x16171b, roughness: 0.4, metalness: 0.35 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 1.55, 22), bodyMat);
+      body.rotation.z = Math.PI / 2;
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.48, 22), bodyMat);
+      nose.rotation.z = -Math.PI / 2;
+      nose.position.x = 1.02;
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.16, 0.22, 18), darkMat);
+      tail.rotation.z = Math.PI / 2;
+      tail.position.x = -0.9;
+      for (const z of [-1, 1]) {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.055, 0.34), darkMat);
+        fin.position.set(-0.62, -0.02, z * 0.26);
+        fin.rotation.y = z * 0.32;
+        group.add(fin);
+      }
+      const glow = new THREE.PointLight(0xff2430, 1.2, 5);
+      glow.position.x = -0.98;
+      group.add(body, nose, tail, glow);
+      group.scale.setScalar(1.55);
+      return group;
+    }
+
+    function updateRockets(dt) {
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const rocket = rockets[i];
+        rocket.life -= dt;
+        if (game.bossActive && viggoHelicopter) {
+          const target = viggoHelicopter.position.clone().add(new THREE.Vector3(0, 1.8, 0));
+          const desired = target.sub(rocket.mesh.position).normalize().multiplyScalar(34);
+          rocket.velocity.lerp(desired, 1 - Math.pow(0.018, dt));
+        }
+        rocket.mesh.position.addScaledVector(rocket.velocity, dt);
+        if (rocket.velocity.lengthSq() > 0.001) {
+          rocket.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), rocket.velocity.clone().normalize());
+        }
+        rocket.smokeTimer -= dt;
+        if (rocket.smokeTimer <= 0) {
+          const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff483e, transparent: true, opacity: 0.72 }));
+          smoke.position.copy(rocket.mesh.position).add(rocket.velocity.clone().normalize().multiplyScalar(-1.15));
+          scene.add(smoke);
+          particles.push({ mesh: smoke, velocity: new THREE.Vector3(0, 0.55, 0), life: 0.45, maxLife: 0.45, scale: 1.8 });
+          rocket.smokeTimer = 0.045;
+        }
+        const hitPoint = rocket.mesh.position.clone();
+        const hitBoss = game.bossActive && viggoHelicopter && hitPoint.distanceTo(viggoHelicopter.position.clone().add(new THREE.Vector3(0, 1.4, 0))) < 3.4;
+        if (hitBoss || rocket.life <= 0) {
+          addImpact(hitPoint, 0xff342f, 42);
+          if (hitBoss) damageBoss(rocket.damage, hitPoint);
+          removeRocket(i);
+        }
+      }
+    }
+
+    function removeRocket(index) {
+      if (!rockets[index]) return;
+      scene.remove(rockets[index].mesh);
+      rockets.splice(index, 1);
+    }
+
+    function damageBoss(amount, point) {
+      if (!game.bossActive) return;
+      game.bossHealth = Math.max(0, game.bossHealth - amount);
+      addImpact(point || viggoHelicopter.position, 0xff5b2e, 18);
+      if (game.bossHealth <= 0) {
+        addImpact(viggoHelicopter.position.clone(), 0xffd36e, 60);
+        if (viggoHelicopter) viggoHelicopter.visible = false;
+        while (rockets.length) removeRocket(0);
+        finishGame();
+      }
+    }
+
+    function defeatEnemy(enemy, index) {
+      addImpact(enemy.group.position.clone().add(new THREE.Vector3(0, 1.6, 0)), 0xfff1a1, 18);
+      scene.remove(enemy.group);
+      enemies.splice(index, 1);
+      const damageIndex = damageables.indexOf(enemy.group);
+      if (damageIndex >= 0) damageables.splice(damageIndex, 1);
+      game.score += 100 + game.wave * 25;
+      game.totalKills += 1;
+      game.levelKills += 1;
+      if (game.specialUnlocked) game.specialCharge = Math.min(1, game.specialCharge + 0.13);
+
+      if (game.level === 1 && game.levelKills === 4 && !game.specialUnlocked) {
+        game.specialUnlocked = true;
+        game.specialCharge = 1;
+        showDialogue("Jasvinder Wick", "That's it... time for the big gun.", jasvinderPortrait, 8);
+        showTutorial(
+          "Big gun unlocked",
+          "That's it... time for the big gun. Press K to pull out the big guns.",
+          "Press K to continue",
+          "bigGun"
+        );
+      }
+
+      if (Math.random() < 0.22) {
+        const pickup = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshBasicMaterial({ color: 0x25f4d0 }));
+        pickup.position.copy(enemy.group.position).add(new THREE.Vector3(0, 0.75, 0));
+        scene.add(pickup);
+        pickups.push({ mesh: pickup, life: 10 });
+      }
+
+      if (game.level === 1 && game.levelKills >= 8) {
+        startLevel2();
+        return;
+      }
+      if (game.level === 2 && game.levelKills >= 12) {
+        startLevel3();
+        return;
+      }
+      if (game.level === 3 && game.levelKills >= 14 && !game.finalFlight && !game.bossActive) {
+        startBossFight();
+        return;
+      }
+
+      if (game.totalKills >= game.nextWaveKills) {
+        game.wave += 1;
+        game.nextWaveKills += 5 + game.wave * 3;
+        spawnWave();
+      }
+    }
+
+    function maybeContinueWave() {
+      if (!game.started || game.paused || game.over || game.level < 1 || game.finalFlight) return;
+      if (enemies.length === 0 && game.levelKills < game.levelGoal) {
+        game.wave += 1;
+        spawnWave();
+      }
+    }
+
+    function clearEnemies() {
+      while (enemies.length) {
+        const enemy = enemies.pop();
+        scene.remove(enemy.group);
+      }
+      damageables.length = 0;
+      for (const list of [playerBullets, enemyBullets]) {
+        while (list.length) removeBullet(list, 0);
+      }
+    }
+
+    function startLevel1() {
+      game.level = 1;
+      game.wave = 1;
+      game.levelKills = 0;
+      game.levelGoal = 8;
+      game.vehicleMode = "onFoot";
+      game.introActive = false;
+      player.group.visible = true;
+      if (redCar) redCar.visible = false;
+      if (helicopter) helicopter.visible = false;
+      showDialogue("Jasvinder Wick", "Viggo Tarasov crossed the only line that mattered. Walk the boulevard. Make his crews talk.", jasvinderPortrait, 6);
+      if (!game.shootingTutorialShown) {
+        game.shootingTutorialShown = true;
+        showTutorial("How to shoot", "Aim with the mouse. Click to fire. Keep moving while the crosshair settles on an attacker.", "Click to continue", "shooting");
+      }
+      spawnWave();
+    }
+
+    function startLevel2() {
+      clearEnemies();
+      game.level = 2;
+      game.wave = 2;
+      game.levelKills = 0;
+      game.levelGoal = 12;
+      game.vehicleMode = "car";
+      player.position.set(-8, 0, 10);
+      player.velocity.set(0, 0, 0);
+      player.yaw = Math.PI;
+      if (redCar) {
+        redCar.visible = true;
+        redCar.position.copy(player.position);
+      }
+      player.group.visible = false;
+      showDialogue("Viggo Tarasov", "You want me, Jasvinder? Then chase my convoy through Los Angeles.", viggoPortrait, 6);
+      showToast("Level 2: red supercar chase");
+      spawnWave();
+    }
+
+    function startLevel3() {
+      clearEnemies();
+      game.level = 3;
+      game.wave = 3;
+      game.levelKills = 0;
+      game.levelGoal = 14;
+      game.vehicleMode = "helicopter";
+      game.timeOfDay = 1;
+      setMusic("./assets/audio/intro-and-loop-john-wick-theme.mp3", 0.55);
+      player.position.set(12, 5, 18);
+      player.velocity.set(0, 0, 0);
+      player.yaw = Math.PI;
+      if (redCar) redCar.visible = false;
+      if (helicopter) {
+        helicopter.visible = true;
+        helicopter.position.copy(player.position);
+      }
+      player.group.visible = false;
+      showScene("The city falls into night. Viggo runs for the hills. Jasvinder takes the sky.", 6);
+      showToast("Level 3: helicopter assault");
+      spawnWave();
+    }
+
+    function startBossFight() {
+      clearEnemies();
+      game.bossActive = true;
+      game.bossHealth = 100;
+      game.bossFireTimer = 1.8;
+      game.rocketCooldown = 0;
+      if (viggoHelicopter) {
+        viggoHelicopter.visible = true;
+        viggoHelicopter.position.set(-34, 15, -32);
+      }
+      showDialogue("Viggo Tarasov", "You should have stayed on the ground, Jasvinder.", viggoPortrait, 5);
+      showTutorial("Boss fight", "Viggo's helicopter is moving and firing. Press R to launch rockets. Four clean hits should end it.", "Click to start the boss fight", "general");
+      showToast("Boss: shoot down Viggo's helicopter");
+    }
+
+    function finishGame() {
+      clearEnemies();
+      game.finalFlight = true;
+      game.over = true;
+      game.bossActive = false;
+      game.timeOfDay = 1;
+      setMusic("./assets/audio/ending-jasvinder-wick.mp3", 0.68);
+      showDialogue("Jasvinder Wick", "I'm tired of this shit. I'm going home.", jasvinderPortrait, 8);
+      showToast("Final scene: flying into the moon");
+      startEndingSequence();
+    }
+
+    function clearEndingTimers() {
+      while (game.endingTimers.length) window.clearTimeout(game.endingTimers.pop());
+    }
+
+    function buildConfetti() {
+      hud.confettiLayer.textContent = "";
+      const colors = ["#fff1c0", "#ff3d57", "#35d7ff", "#25f4d0", "#ff9c2f", "#f7c948"];
+      for (let i = 0; i < 140; i++) {
+        const piece = document.createElement("i");
+        piece.className = "confetti-piece";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.setProperty("--fall-duration", `${3.4 + Math.random() * 3.8}s`);
+        piece.style.setProperty("--fall-delay", `${Math.random() * -6}s`);
+        piece.style.setProperty("--drift", `${(Math.random() - 0.5) * 260}px`);
+        piece.style.setProperty("--tilt", `${Math.random() * 360}deg`);
+        hud.confettiLayer.appendChild(piece);
+      }
+    }
+
+    function startEndingSequence() {
+      if (game.endingStarted) return;
+      game.endingStarted = true;
+      clearEndingTimers();
+      buildConfetti();
+      hud.playAgainPanel.classList.remove("visible");
+      hud.creditsRoll.style.animation = "none";
+      hud.creditsRoll.offsetHeight;
+      hud.creditsRoll.style.animation = "";
+      hud.endingOverlay.className = "visible confetti";
+      game.endingTimers.push(window.setTimeout(() => {
+        hud.endingOverlay.classList.remove("confetti");
+      }, 15000));
+      game.endingTimers.push(window.setTimeout(() => {
+        hud.endingOverlay.classList.add("credits");
+      }, 15800));
+      game.endingTimers.push(window.setTimeout(() => {
+        hud.playAgainPanel.classList.add("visible");
+      }, 29200));
+    }
+
+    function hideEndingSequence() {
+      clearEndingTimers();
+      game.endingStarted = false;
+      hud.endingOverlay.className = "";
+      hud.confettiLayer.textContent = "";
+      hud.playAgainPanel.classList.remove("visible");
+    }
+
+    function updateBullets(dt) {
+      updateBulletList(playerBullets, dt, true);
+      updateBulletList(enemyBullets, dt, false);
+    }
+
+    function updateBulletList(list, dt, fromPlayer) {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const bullet = list[i];
+        bullet.life -= dt;
+        const previous = bullet.mesh.position.clone();
+        bullet.mesh.position.addScaledVector(bullet.velocity, dt);
+
+        if (fromPlayer) {
+          for (const enemy of enemies) {
+            const hitPoint = closestPointOnSegment(previous, bullet.mesh.position, enemy.group.position.clone().add(new THREE.Vector3(0, 1.55, 0)));
+            if (hitPoint.distanceTo(enemy.group.position.clone().add(new THREE.Vector3(0, 1.55, 0))) < enemy.radius + 0.38) {
+              enemy.health -= bullet.power;
+              addImpact(hitPoint, 0xfff1a1, 6);
+              removeBullet(list, i);
+              break;
+            }
+          }
+        } else {
+          const playerCenter = player.position.clone().add(new THREE.Vector3(0, 1.65, 0));
+          const hitPoint = closestPointOnSegment(previous, bullet.mesh.position, playerCenter);
+          if (hitPoint.distanceTo(playerCenter) < player.radius + 0.28 && player.invulnerable <= 0) {
+            damagePlayer(bullet.power);
+            addImpact(hitPoint, 0xff685c, 5);
+            removeBullet(list, i);
+          }
+        }
+
+        if (bullet.life <= 0 || Math.abs(bullet.mesh.position.x) > 130 || Math.abs(bullet.mesh.position.z) > 130) {
+          removeBullet(list, i);
+        }
+      }
+    }
+
+    function closestPointOnSegment(a, b, point) {
+      const ab = b.clone().sub(a);
+      const t = clamp(point.clone().sub(a).dot(ab) / Math.max(0.0001, ab.lengthSq()), 0, 1);
+      return a.clone().addScaledVector(ab, t);
+    }
+
+    function removeBullet(list, index) {
+      if (!list[index]) return;
+      scene.remove(list[index].mesh);
+      list.splice(index, 1);
+    }
+
+    function damagePlayer(amount) {
+      if (game.specialActive > 0) amount *= 0.25;
+      player.health = Math.max(0, player.health - amount);
+      player.invulnerable = 0.08;
+      if (player.health <= 0) {
+        game.over = true;
+        document.exitPointerLock?.();
+        showToast("Jasvinder is down. Press R to restart.");
+      }
+    }
+
+    function updatePickups(dt) {
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const pickup = pickups[i];
+        pickup.life -= dt;
+        pickup.mesh.rotation.y += dt * 3;
+        pickup.mesh.position.y = 0.75 + Math.sin(performance.now() * 0.006 + i) * 0.16;
+        if (pickup.mesh.position.distanceTo(player.position) < 1.6) {
+          player.health = Math.min(100, player.health + 18);
+          game.specialCharge = Math.min(1, game.specialCharge + 0.2);
+          showToast("Picked up adrenaline");
+          scene.remove(pickup.mesh);
+          pickups.splice(i, 1);
+        } else if (pickup.life <= 0) {
+          scene.remove(pickup.mesh);
+          pickups.splice(i, 1);
+        }
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i];
+        particle.life -= dt;
+        particle.velocity.y -= 8 * dt;
+        particle.mesh.position.addScaledVector(particle.velocity, dt);
+        const alpha = clamp(particle.life / particle.maxLife, 0, 1);
+        particle.mesh.scale.setScalar(Math.max(0.01, alpha * particle.scale));
+        if (particle.mesh.material.transparent !== undefined) {
+          particle.mesh.material.transparent = true;
+          particle.mesh.material.opacity = alpha;
+        }
+        if (particle.life <= 0) {
+          scene.remove(particle.mesh);
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function updateSpecial(dt) {
+      if (game.specialActive > 0) {
+        game.specialActive -= dt;
+        game.specialLockTime = Math.max(0, game.specialLockTime - dt);
+        game.specialFireTimer -= dt;
+        if (game.specialFireTimer <= 0) {
+          const target = getBestLockTarget();
+          if (target) {
+            tempVec.copy(target.group.position).add(new THREE.Vector3(0, 1.8, 0)).sub(player.position.clone().add(new THREE.Vector3(0, 2.15, 0))).normalize();
+            player.yaw = Math.atan2(tempVec.x, tempVec.z);
+            player.pitch = clamp(Math.asin(tempVec.y), -0.48, 0.32);
+            game.forcedShotTarget = target.group.position.clone().add(new THREE.Vector3(0, 1.65, 0));
+          }
+          shootPlayer(58, 0.018);
+          game.specialFireTimer = 0.038;
+        }
+        if (game.specialActive <= 0) {
+          document.body.classList.remove("special");
+          game.specialLockTarget = null;
+          game.specialLockTime = 0;
+          showToast("Special move cooling down");
+        }
+      } else {
+        if (game.specialUnlocked) game.specialCharge = Math.min(1, game.specialCharge + dt * 0.018);
+      }
+    }
+
+    function getNearestEnemy() {
+      let closest = null;
+      let closestDistance = Infinity;
+      for (const enemy of enemies) {
+        const dist = enemy.group.position.distanceToSquared(player.position);
+        if (dist < closestDistance) {
+          closest = enemy;
+          closestDistance = dist;
+        }
+      }
+      return closest;
+    }
+
+    function getBestLockTarget() {
+      if (!enemies.length) return null;
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      if (game.specialLockTarget && enemies.includes(game.specialLockTarget) && game.specialLockTarget.health > 0 && game.specialLockTime > 0) {
+        return game.specialLockTarget;
+      }
+      let best = null;
+      let bestScore = Infinity;
+      for (const enemy of enemies) {
+        const target = enemy.group.position.clone().add(new THREE.Vector3(0, 1.65, 0));
+        const toTarget = target.clone().sub(camera.position);
+        const distance = toTarget.length();
+        const alignment = 1 - cameraDirection.dot(toTarget.normalize());
+        const playerDistance = enemy.group.position.distanceTo(player.position);
+        const facingBonus = alignment < 0.18 ? -10 : 0;
+        const score = alignment * 130 + playerDistance * 0.012 + distance * 0.004 + facingBonus;
+        if (score < bestScore) {
+          best = enemy;
+          bestScore = score;
+        }
+      }
+      const locked = best || getNearestEnemy();
+      game.specialLockTarget = locked;
+      game.specialLockTime = 0.42;
+      return locked;
+    }
+
+    function activateSpecial() {
+      if (!game.specialUnlocked || game.specialCharge < 1 || game.specialActive > 0 || game.over) return;
+      if (game.tutorial === "bigGun") {
+        hideTutorial();
+        showTutorial(
+          "Reusing the big guns",
+          "After this, K recharges through kills and time. When the meter says READY, press K again.",
+          "Click to resume the fight",
+          "general"
+        );
+        game.specialUsedOnce = true;
+      }
+      game.specialCharge = 0;
+      game.specialActive = 11;
+      game.specialFireTimer = 0;
+      game.specialLockTarget = null;
+      game.specialLockTime = 0;
+      document.body.classList.add("special");
+      showToast("K: Pull out the big guns");
+      for (let i = 0; i < 28; i++) {
+        const angle = i * TAU / 28;
+        const pos = player.position.clone().add(new THREE.Vector3(Math.cos(angle) * 2.1, 1.1, Math.sin(angle) * 2.1));
+        addImpact(pos, i % 2 ? 0x25f4d0 : 0xff477e, 2);
+      }
+    }
+
+    function showToast(text) {
+      hud.toast.textContent = text;
+      hud.toast.style.opacity = "1";
+      game.toastTimer = 2.1;
+    }
+
+    function updateHud(dt) {
+      hud.healthFill.style.transform = `scaleX(${clamp(player.health / 100, 0, 1)})`;
+      hud.healthText.textContent = Math.ceil(player.health);
+      hud.specialFill.style.transform = `scaleX(${game.specialUnlocked ? clamp(game.specialCharge, 0, 1) : 0})`;
+      hud.specialText.textContent = game.specialUnlocked ? (game.specialCharge >= 1 ? "ready: K" : `${Math.round(game.specialCharge * 100)}%`) : "locked";
+      hud.kControl.classList.toggle("locked", !game.specialUnlocked);
+      hud.scoreText.textContent = game.score.toLocaleString();
+      hud.waveText.textContent = game.wave;
+      hud.killsText.textContent = game.level > 0 ? `${Math.min(game.levelKills, game.levelGoal)} / ${game.levelGoal}` : "story";
+      hud.bossHealth.classList.toggle("visible", game.bossActive);
+      hud.bossFill.style.transform = `scaleX(${clamp(game.bossHealth / 100, 0, 1)})`;
+      hud.bossText.textContent = `${Math.ceil(game.bossHealth)}%`;
+
+      if (game.toastTimer > 0) {
+        game.toastTimer -= dt;
+        if (game.toastTimer <= 0) hud.toast.style.opacity = "0";
+      }
+      if (game.storyTimer > 0) {
+        game.storyTimer -= dt;
+        if (game.storyTimer <= 0) {
+          hideDialogue();
+          hideExposition();
+        }
+      }
+    }
+
+    function updateStory(dt) {
+      if (game.started && game.level === 0 && game.introTimer > 0) {
+        game.introTimer -= dt;
+        if (viggoHelicopter) {
+          viggoHelicopter.visible = true;
+          const orbit = performance.now() * 0.00045;
+          viggoHelicopter.position.set(Math.cos(orbit) * 28, 9.5 + Math.sin(orbit * 1.7) * 2, -38 + Math.sin(orbit) * 20);
+          viggoHelicopter.rotation.y = Math.PI / 2 - orbit;
+          const rotor = viggoHelicopter.getObjectByName("mainRotor");
+          if (rotor) rotor.rotation.y += dt * 30;
+        }
+        if (game.introTimer <= 0) startLevel1();
+      }
+      const night = clamp(game.timeOfDay, 0, 1);
+      if (moon) moon.visible = night > 0.25;
+      if (stars) stars.visible = night > 0.2;
+      scene.fog.color.setHSL(lerp(0.57, 0.64, night), lerp(0.22, 0.42, night), lerp(0.62, 0.09, night));
+      scene.fog.near = lerp(55, 38, night);
+      scene.fog.far = lerp(180, 150, night);
+      maybeContinueWave();
+    }
+
+    function restart() {
+      hideEndingSequence();
+      for (const list of [playerBullets, enemyBullets]) {
+        while (list.length) removeBullet(list, 0);
+      }
+      while (rockets.length) removeRocket(0);
+      while (enemies.length) {
+        const enemy = enemies.pop();
+        scene.remove(enemy.group);
+      }
+      while (particles.length) {
+        const particle = particles.pop();
+        scene.remove(particle.mesh);
+      }
+      while (pickups.length) {
+        const pickup = pickups.pop();
+        scene.remove(pickup.mesh);
+      }
+      damageables.length = 0;
+      player.position.set(0, 0, 4);
+      player.velocity.set(0, 0, 0);
+      player.yaw = Math.PI;
+      player.pitch = -0.18;
+      player.group.visible = true;
+      player.health = 100;
+      player.invulnerable = 0;
+      game.over = false;
+      game.score = 0;
+      game.wave = 1;
+      game.level = 0;
+      game.levelKills = 0;
+      game.totalKills = 0;
+      game.nextWaveKills = 8;
+      game.levelGoal = 8;
+      game.paused = false;
+      game.tutorial = null;
+      game.specialUnlocked = false;
+      game.specialUsedOnce = false;
+      game.shootingTutorialShown = false;
+      game.henchmenStarted = false;
+      game.bossActive = false;
+      game.bossHealth = 100;
+      game.rocketCooldown = 0;
+      game.specialCharge = 0;
+      game.specialActive = 0;
+      game.specialLockTarget = null;
+      game.specialLockTime = 0;
+      game.vehicleMode = "onFoot";
+      game.frontCamera = false;
+      game.frontCameraTimer = 0;
+      game.introActive = true;
+      game.introTimer = 12.5;
+      game.finalFlight = false;
+      game.endingStarted = false;
+      game.timeOfDay = 0;
+      if (redCar) redCar.visible = false;
+      if (helicopter) helicopter.visible = false;
+      if (viggoHelicopter) {
+        viggoHelicopter.visible = true;
+        viggoHelicopter.position.set(4, 8, -34);
+        viggoHelicopter.rotation.y = Math.PI;
+      }
+      hideTutorial();
+      setMusic("./assets/audio/intro-and-loop-john-wick-theme.mp3", 0.55);
+      document.body.classList.remove("special");
+      showScene("Russian mob boss Viggo Tarasov has killed Jasvinder Wick's dog, Puja. The city goes quiet around him.", 4);
+      queueDialogue(3600, "Jasvinder Wick", "No... no, no, no. He was all I had left.", jasvinderPortrait, 4.5);
+      queueDialogue(7200, "Viggo Tarasov", "Fly. Leave him with the body. My men will finish the rest.", viggoPortrait, 4.5);
+      showToast("Story begins");
+    }
+
+    function populateWorld() {
+      addSkyDome();
+      addMoonAndStars();
+      addLights();
+      addGround();
+      addSkylineAndCity();
+      addIntroScene();
+      addViggoBillboard();
+      createJasvinder();
+      redCar = makeRedCar();
+      helicopter = makeHelicopter();
+      viggoHelicopter = makeViggoHelicopter();
+
+      for (let i = 0; i < 10; i++) {
+        const barrier = new THREE.Mesh(new RoundedBoxGeometry(3.2, 1.2, 1.2, 4, 0.16), materials.concrete);
+        barrier.position.set(-36 + i * 8, 0.6, i % 2 ? 13 : -13);
+        barrier.castShadow = true;
+        barrier.receiveShadow = true;
+        scene.add(barrier);
+        obstacles.push({ mesh: barrier, radius: 2.1 });
+      }
+
+      for (let i = 0; i < 8; i++) {
+        const car = new THREE.Group();
+        const paint = new THREE.MeshPhysicalMaterial({ color: [0x8c1b1e, 0x1c5b7a, 0x25272b, 0xd4c2a4][i % 4], roughness: 0.28, metalness: 0.22, clearcoat: 0.85, clearcoatRoughness: 0.18 });
+        const body = new THREE.Mesh(new RoundedBoxGeometry(4.4, 0.95, 2.05, 5, 0.36), paint);
+        body.position.y = 0.72;
+        body.castShadow = true;
+        const hood = new THREE.Mesh(new RoundedBoxGeometry(1.25, 0.28, 1.92, 4, 0.18), paint);
+        hood.position.set(1.45, 1.13, 0);
+        const trunk = new THREE.Mesh(new RoundedBoxGeometry(1.0, 0.24, 1.86, 4, 0.16), paint);
+        trunk.position.set(-1.55, 1.08, 0);
+        const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.82, 0.78, 1.48, 4, 0.22), materials.glass);
+        cabin.position.y = 1.42;
+        const windshield = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.55, 1.34, 3, 0.08), materials.glass);
+        windshield.position.set(0.82, 1.48, 0);
+        windshield.rotation.z = -0.26;
+        car.add(body, hood, trunk, cabin, windshield);
+        for (const sx of [-1.45, 1.45]) {
+          for (const sz of [-0.95, 0.95]) {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.27, 28), materials.black);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(sx, 0.36, sz);
+            car.add(wheel);
+            const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 8, 22), new THREE.MeshStandardMaterial({ color: 0xb9bec5, roughness: 0.28, metalness: 0.75 }));
+            rim.rotation.y = Math.PI / 2;
+            rim.position.set(sx, 0.36, sz + (sz > 0 ? 0.145 : -0.145));
+            car.add(rim);
+          }
+        }
+        car.position.set(-74 + i * 21, 0, i % 2 ? -7 : 8);
+        car.rotation.y = i % 2 ? 0.1 : Math.PI + 0.1;
+        scene.add(car);
+        obstacles.push({ mesh: car, radius: 2.9 });
+      }
+    }
+
+    function startGame() {
+      if (!game.started) {
+        game.started = true;
+        document.body.classList.add("playing");
+        game.level = 0;
+        game.introActive = true;
+        game.introTimer = 12.5;
+        setMusic("./assets/audio/intro-and-loop-john-wick-theme.mp3", 0.55);
+        player.position.set(0, 0, -4.2);
+        player.yaw = Math.PI;
+        if (helicopter) helicopter.visible = false;
+        if (viggoHelicopter) {
+          viggoHelicopter.visible = true;
+          viggoHelicopter.position.set(4, 8, -34);
+          viggoHelicopter.rotation.y = Math.PI;
+        }
+        showScene("Russian mob boss Viggo Tarasov has killed Jasvinder Wick's dog, Puja. His helicopter lifts away over Los Angeles.", 4);
+        queueDialogue(3600, "Jasvinder Wick", "No... no, no, no. He was all I had left.", jasvinderPortrait, 4.5);
+        queueDialogue(7200, "Viggo Tarasov", "Fly. Leave him with the body. My men will finish the rest.", viggoPortrait, 4.5);
+        showToast("Opening scene");
+      }
+      try {
+        const lockRequest = renderer.domElement.requestPointerLock?.();
+        lockRequest?.catch?.(() => {});
+      } catch {
+        // Some embedded browser surfaces disable pointer lock; click-to-shoot still works.
+      }
+      startSoundtrack();
+    }
+
+    function startSoundtrack() {
+      if (!game.currentTrack) setMusic("./assets/audio/intro-and-loop-john-wick-theme.mp3", 0.55);
+      hud.soundtrack.play().catch(() => {
+        if (!game.started) showToast("Click once to enable the soundtrack");
+      });
+    }
+
+    function onPointerMove(event) {
+      if (game.over) return;
+      if (game.frontCamera && (Math.abs(event.movementX) > 2 || Math.abs(event.movementY) > 2)) {
+        game.frontCamera = false;
+        game.frontCameraTimer = 0;
+      }
+      if (document.pointerLockElement === renderer.domElement) {
+        player.yaw -= event.movementX * 0.0022;
+        player.pitch = clamp(player.pitch - event.movementY * 0.0018, -0.76, 0.35);
+        return;
+      }
+      if (game.started && !game.paused) {
+        player.yaw -= event.movementX * 0.0028;
+        player.pitch = clamp(player.pitch - event.movementY * 0.0022, -0.76, 0.35);
+      }
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(0.033, clock.getDelta());
+      updateStory(dt);
+      if (game.finalFlight) {
+        updateHelicopter(dt);
+      } else if (game.started && !game.over && !game.paused) {
+        updateSpecial(dt);
+        updatePlayer(dt);
+        updateEnemies(dt);
+        updateBoss(dt);
+        updateRockets(dt);
+        updateBullets(dt);
+        updatePickups(dt);
+      } else {
+        if (!game.introActive) player.group.rotation.y += dt * 0.18;
+        updateCharacterAnimation(dt, 0);
+      }
+      updateParticles(dt);
+      updateCamera(dt);
+      updateViggoFaceBillboard();
+      updateHud(dt);
+      composer.render();
+    }
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("keydown", (event) => {
+      startSoundtrack();
+      if (event.code === "KeyK" && game.tutorial === "bigGun") {
+        activateSpecial();
+        event.preventDefault();
+        return;
+      }
+      keys.add(event.code);
+      if (event.code === "KeyK") activateSpecial();
+      if (event.code === "KeyR" && game.bossActive) shootRocket();
+      else if (event.code === "KeyR") restart();
+      if (event.code === "KeyV") {
+        game.frontCamera = true;
+        game.frontCameraTimer = 2.4;
+        showToast("Brief face camera");
+      }
+      if (event.code === "KeyL") game.debugAim = !game.debugAim;
+      if (["Space", "KeyW", "KeyA", "KeyS", "KeyD"].includes(event.code)) event.preventDefault();
+    });
+    window.addEventListener("keyup", (event) => keys.delete(event.code));
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("mousedown", (event) => {
+      startSoundtrack();
+      if (event.button !== 0) return;
+      if (game.paused && game.tutorial !== "bigGun") {
+        hideTutorial();
+        return;
+      }
+      if (!game.started) {
+        startGame();
+        return;
+      }
+      if (document.pointerLockElement !== renderer.domElement) startGame();
+      game.frontCamera = false;
+      game.frontCameraTimer = 0;
+      if (!game.over) shootPlayer();
+    });
+    hud.prompt.addEventListener("click", startGame);
+    hud.playAgainButton.addEventListener("click", restart);
+
+    populateWorld();
+    updateCamera(1);
+    startSoundtrack();
+    showToast("Click to start");
+    animate();
+  </script>
+</body>
+</html>
